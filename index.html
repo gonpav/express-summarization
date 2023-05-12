@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Express App</title>
+</head>
+<body>
+  <h1>News</h1>
+
+  <table id="newsTable">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Summary</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    axios.get('/news')
+      .then(response => {
+        const news = response.data;
+        const tableBody = document.querySelector('#newsTable tbody');
+
+        news.forEach(article => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><a href="${article.url}"/>${article.title}</td>
+            <td>${article.summary}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  </script>
+
+</body>
+</html>
