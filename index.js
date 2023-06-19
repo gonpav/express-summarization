@@ -26,7 +26,7 @@ app.use(bodyParser.json());
 const mongoose = require('mongoose');
 
 // replace the uri string with your connection string.
-const uri = 'mongodb+srv://gonpav:bigcah-purVo3-wytxov@newsai.joqmvt8.mongodb.net/?retryWrites=true&w=majority';
+const uri = process.env.MONGODB_ATLAS_CS;
 mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const db = mongoose.connection;
