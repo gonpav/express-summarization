@@ -22,6 +22,21 @@ const { NewsManager } = require('./newsmanager.js');
 app.use(express.static('public'));
 app.use(bodyParser.json());
 
+// Connect mongoose and MongoDB
+const mongoose = require('mongoose');
+
+// replace the uri string with your connection string.
+const uri = 'mongodb+srv://gonpav:bigcah-purVo3-wytxov@newsai.joqmvt8.mongodb.net/?retryWrites=true&w=majority';
+mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function() {
+  console.log("Connected to MongoDB Atlas");
+});
+
+
+
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
