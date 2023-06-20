@@ -1,0 +1,15 @@
+/* Define the "red-text" class */
+.red-text {
+    color: red;
+  }
+  
+  /* Define the "gray-background" class */
+  .gray-background {
+    background-color: gray;
+  }
+  
+
+.dropdown-placeholder {
+    color: lightgrey;
+    font-style: italic;
+}

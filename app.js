@@ -18,7 +18,6 @@ mongoose.connection.once('open', function() { console.log("Connected to MongoDB 
 
 // NewsManager instance.
 const newsManager = new NewsManager();
-//newsManager.loadSources(sourcesdbFile);
 
 app.use('/news', async (req, res) => {
     const sourcesdbFile = __dirname + `/${process.env.SOURCESDB_DIR}/${process.env.SOURCESDB_FILE}`;
@@ -76,8 +75,8 @@ app.use('/getArticlesData', async (req, res) => {
     res.json({ articles: articles });
 });
 
-
-app.listen(3000, () => {
-    console.log('Server started on port 3000');
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log('Server started on port ' + port);
 });
 

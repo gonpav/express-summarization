@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Page Title</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <link href="./stylesheets/metadata-extractor.css" rel="stylesheet" type="text/css">
+</head>
+<body class="m-10" style="font-size: 12px;">
+    <div class="grid grid-cols-3 gap-4">
+        <div>
+            <!-- <label>Source</label> -->
+            <select id="dropdown1" class="w-full p-2 border border-gray-300 rounded dropdown-placeholder" onchange="dropDownOnChange(this)">
+                <option value="" selected class="dropdown-placeholder">Select news source</option>
+            </select>
+        </div>
+        <div>
+            <!-- <label>Article</label> -->
+            <select id="dropdown2" class="w-full p-2 border border-gray-300 rounded dropdown-placeholder" onchange="dropDownOnChange(this)">
+                <option value="" selected class="dropdown-placeholder">Select article</option>
+            </select>
+        </div>
+    </div>
+    <div class="mt-4">
+        <label id="label1" class="block w-2/3 mb-2"></label>
+        <label id="label2" class="block w-2/3 mb-2"></label>
+        <label id="label3" class="block w-2/3 mb-2"></label>
+        <label id="label4" class="block w-2/3"></label>
+    </div>
+    <div class="mt-4 grid grid-cols-3 gap-4">
+        <div>
+            <select id="dropdown3" class="w-full p-2 border border-gray-300 rounded dropdown-placeholder" onchange="dropDownOnChange(this)">
+                <option value="" selected class="dropdown-placeholder">Select extracted metadata</option>
+            </select>
+        </div>
+        <div class="col-start-3 text-right">
+            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Extract</button>
+        </div>
+    </div>
+    <div class="mt-4 grid grid-cols-3 gap-4">
+        <div class="col-span-2">
+            <textarea id="textArea" class="w-full p-2 border border-gray-300 rounded" rows="6"></textarea>
+        </div>
+        <div>
+            <select id="dropdown4" class="w-full mb-2 p-2 border border-gray-300 rounded"></select>
+            <select id="dropdown5" class="w-full p-2 border border-gray-300 rounded"></select>
+        </div>
+    </div>
+    <div class="mt-4 grid grid-cols-2 gap-4">
+        <div>
+            <textarea id="textArea2" class="w-full p-2 border border-gray-300 rounded" rows="6"></textarea>
+        </div>
+        <div>
+            <textarea id="textArea3" class="w-full p-2 border border-gray-300 rounded" rows="6"></textarea>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+    <script src="./javascripts/metadata-extractor.js"></script>  
+</body>
+</html>
