@@ -6,7 +6,7 @@ const { URL } = require('url');
 const { JSDOM } = require("jsdom");
 const { Readability } = require('@mozilla/readability');
 
-class NewsSource {
+class NewsSourceProcessor {
     constructor(urlString, requireFetchArticles){
         if(urlString){
             this.url = new URL(urlString);
@@ -61,7 +61,7 @@ class NewsSource {
         // internal function to assign data to article.contentData
         function assignContentData(article, data, sourceName){
             const sourcesdir = process.env.SOURCESDB_DIR;
-            NewsSource._saveToFile(article.title.replace(/[^a-zA-Z0-9\.\-_]/g, '').substring(0,10), `${sourcesdir}/${sourceName}`, data, 'txt');                    
+            NewsSourceProcessor._saveToFile(article.title.replace(/[^a-zA-Z0-9\.\-_]/g, '').substring(0,10), `${sourcesdir}/${sourceName}`, data, 'txt');                    
             article.contentData = data;
             article.lastError = null;
         }
@@ -69,7 +69,7 @@ class NewsSource {
         return new Promise((resolve, reject) => {
             if(!this.requireFetchArticles){
                 // For articles that are already preloaded with the feed just assign 'content' to 'contentData'
-                assignContentData(article, article.content, this.name);
+                assignContentData(article, article.contentSnippet, this.name);
                 resolve();
                 return;
             }
@@ -112,6 +112,29 @@ class NewsSource {
             });
     }
 
+    _castSourceItemsToArticles(sourceDataItems) {
+        if (!sourceDataItems || sourceDataItems.length == 0){
+            return null;
+        }
+        return sourceDataItems.map(feedObject => {
+            return {
+                title: feedObject.title,
+                link: feedObject.link || feedObject.url,
+                author: feedObject.creator || feedObject.author,
+                pubDate: feedObject.pubDate || feedObject.publishedAt,
+                contentSnippet: feedObject.contentSnippet || feedObject.content
+                }
+            });
+    }
+
+    _preprocessHTML(html) {
+        const dom = new JSDOM(html);
+        const document = dom.window.document;      
+        const reader = new Readability(document);
+        const article = reader.parse();      
+        return article.textContent.replace(/\s+/g, " ").trim();
+    }
+
     _saveSourceData(sourceData, sourceDataItems){
         this.data = sourceData;
         this.articles = this._castSourceItemsToArticles(sourceDataItems);
@@ -119,18 +142,18 @@ class NewsSource {
         const sourcesdir = process.env.SOURCESDB_DIR; 
 
         if (this.articles && this.articles.length > 0) {
-            NewsSource._saveToFile(this.name, sourcesdir, JSON.stringify (this.articles), 'json');
+            NewsSourceProcessor._saveToFile(this.name, sourcesdir, JSON.stringify (this.articles), 'json');
         }
         else {
-            NewsSource._saveToFile(this.name, sourcesdir, this.data, 'txt');
+            NewsSourceProcessor._saveToFile(this.name, sourcesdir, this.data, 'txt');
         }
     }
 
     _loadSourceData(loadContentData){
         const sourcesdir = process.env.SOURCESDB_DIR;
-        let content = NewsSource._loadFromFile(this.name, sourcesdir, 'json');
+        let content = NewsSourceProcessor._loadFromFile(this.name, sourcesdir, 'json');
         if (!content){
-            content = NewsSource._loadFromFile(this.name, sourcesdir, 'txt');
+            content = NewsSourceProcessor._loadFromFile(this.name, sourcesdir, 'txt');
             if(content) {
                 this.data = content;
             }
@@ -141,7 +164,7 @@ class NewsSource {
             if (loadContentData && this.articles){
                 for (let index = 0; index < this.articles.length; index++) {
                     const article = this.articles[index];
-                    article.contentData = NewsSource._loadFromFile(article.title.replace(/[^a-zA-Z0-9\.\-_]/g, '').substring(0,10), `${sourcesdir}/${this.name}`, 'txt');    
+                    article.contentData = NewsSourceProcessor._loadFromFile(article.title.replace(/[^a-zA-Z0-9\.\-_]/g, '').substring(0,10), `${sourcesdir}/${this.name}`, 'txt');    
                 }
             }
         }
@@ -165,31 +188,8 @@ class NewsSource {
         }
         return fs.readFileSync(filePath, 'utf8');
     }
-
-    _castSourceItemsToArticles(sourceDataItems) {
-        if (!sourceDataItems || sourceDataItems.length == 0){
-            return null;
-        }
-        return sourceDataItems.map(feedObject => {
-            return {
-                title: feedObject.title,
-                link: feedObject.link || feedObject.url,
-                author: feedObject.creator || feedObject.author,
-                pubDate: feedObject.pubDate || feedObject.publishedAt,
-                content: feedObject.contentSnippet || feedObject.content
-                }
-            });
-    }
-
-    _preprocessHTML(html) {
-        const dom = new JSDOM(html);
-        const document = dom.window.document;      
-        const reader = new Readability(document);
-        const article = reader.parse();      
-        return article.textContent.replace(/\s+/g, " ").trim();
-    }
 }
 
 module.exports = {
-	NewsSource,
+	NewsSourceProcessor: NewsSourceProcessor,
 };

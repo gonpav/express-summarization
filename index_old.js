@@ -17,7 +17,7 @@ const fs = require('fs');
 
 
 
-const { NewsManager } = require('./newsmanager.js');
+const { NewsManager } = require('./services/newsmanager.js');
 
 app.use(express.static('public'));
 app.use(bodyParser.json());

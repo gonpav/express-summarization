@@ -16,7 +16,7 @@
         <div>
             <!-- <label>Article</label> -->
             <select id="dropdown2" class="w-full p-2 border border-gray-300 rounded dropdown-placeholder" onchange="dropDownOnChange(this)">
-                <option value="" selected class="dropdown-placeholder">Select article</option>
+                <!-- <option value="" selected class="dropdown-placeholder">Select article</option> -->
             </select>
         </div>
     </div>
@@ -24,12 +24,12 @@
         <label id="label1" class="block w-2/3 mb-2"></label>
         <label id="label2" class="block w-2/3 mb-2"></label>
         <label id="label3" class="block w-2/3 mb-2"></label>
-        <label id="label4" class="block w-2/3"></label>
+        <label id="label4" class="block w-2/3 line-clamp-1 cursor-help"></label>
     </div>
     <div class="mt-4 grid grid-cols-3 gap-4">
         <div>
             <select id="dropdown3" class="w-full p-2 border border-gray-300 rounded dropdown-placeholder" onchange="dropDownOnChange(this)">
-                <option value="" selected class="dropdown-placeholder">Select extracted metadata</option>
+                <!-- <option value="" selected class="dropdown-placeholder">Select extracted metadata</option> -->
             </select>
         </div>
         <div class="col-start-3 text-right">
@@ -54,7 +54,9 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="./javascripts/metadata-extractor.js"></script>  
 </body>
 </html>

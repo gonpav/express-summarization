@@ -1,24 +1,24 @@
+require('dotenv').config();
+
 const fs = require('fs');
-const { NewsSource } = require('./newssource.js');
-const { RssNewsSource } = require('./rssnewssource.js');
+const { NewsSourceProcessor } = require('./newssource-processor.js');
+const { RssNewsSourceProcessor } = require('./rssnewssource-processor.js');
 
 // NewsManager class that holds all temporary data on news getting, parsing and summarization.
-class NewsManager {
+// const newsManager = new NewsManager();
+const newsManager = new class{
+// class NewsManager {
     constructor() {
-        this.reset([]);
-    }
-
-    reset(urls){
-        this.urls = urls;
         this.sources = [];
         // this.articles = [];
         this.curFetchingSource = null;
+        this._loadSources();
     }
 
-    async processSources() {
+    async processSources(urls) {
     
         let promises = [];
-        this.urls.forEach(async url => {
+        urls.forEach(async url => {
             const newsSource = this.createNewsSource(url);
             this.sources.push(newsSource);
             promises.push(newsSource.download());
@@ -33,11 +33,11 @@ class NewsManager {
         // This is Factory method to get instance of NewsSource class;
         if (url && (url.toLowerCase().includes("rss") || url.toLowerCase().includes("feed"))){
             if (url.toLowerCase().includes("macworld.com")){
-                return new RssNewsSource(url, false);
+                return new RssNewsSourceProcessor(url, false);
             }
-            return new RssNewsSource(url, true);
+            return new RssNewsSourceProcessor(url, true);
         }
-        return new NewsSource(url, true);
+        return new NewsSourceProcessor(url, true);
     }
 
     processSourcesStatus(){
@@ -118,7 +118,7 @@ class NewsManager {
         }
     }  
     // saveSources function saves this.sources in sourcesdb.json file   
-    saveSources(filename) {
+    saveSources() {
         if (!this.sources) return;
 
         const serializedObjects = this.sources.map((obj) => {
@@ -128,10 +128,22 @@ class NewsManager {
         });
       
         const json = JSON.stringify(serializedObjects, null, 2);
+        
+        const filename = __dirname + `/${process.env.SOURCESDB_DIR}/${process.env.SOURCESDB_FILE}`;
         fs.writeFileSync(filename, json);
     }
     
-    loadSources(filename) {
+    _loadSources() {
+        // const obj = new RssNewsSource("https://some.com", false);
+        // obj.newMethod();
+        // return;
+        
+        // We do NOT load sources from the Database if there were loaded previously. 
+
+        if (this.sources && this.sources.length > 0) return;
+
+        const filename = __dirname + `/${process.env.SOURCESDB_DIR}/${process.env.SOURCESDB_FILE}`;
+
         if (!fs.existsSync(filename)) return;
 
         const json = fs.readFileSync(filename, 'utf8');
@@ -142,11 +154,11 @@ class NewsManager {
           const data = JSON.parse(serializedObj.data);
       
           switch (className) {
-            case 'NewsSource':
-              return new NewsSource(data.url, data.requireFetchArticles);
+            case 'NewsSourceProcessor':
+              return new NewsSourceProcessor(data.url, data.requireFetchArticles);
       
-            case 'RssNewsSource':
-              return new RssNewsSource(data.url, data.requireFetchArticles);
+            case 'RssNewsSourceProcessor':
+              return new RssNewsSourceProcessor(data.url, data.requireFetchArticles);
       
             // Add more cases for other classes if necessary
       
@@ -163,6 +175,4 @@ class NewsManager {
     }
 }
 
-module.exports = {
-	NewsManager,
-};
+module.exports = newsManager;

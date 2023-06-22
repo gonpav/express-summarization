@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
-const { NewsManager } = require('./newsmanager.js');
 
 const bodyParser = require('body-parser');
 const app = express();
@@ -11,17 +10,19 @@ const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 
+const newsManager = require('./services/newsmanager.js');
+const newsSourceRoutes = require('./routes/newsSourceRoutes');
+
 // Connect mongoose and MongoDB
 mongoose.connect(process.env.MONGODB_ATLAS_CS, { useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.connection.on('error', console.error.bind(console, 'connection error:'));
 mongoose.connection.once('open', function() { console.log("Connected to MongoDB Atlas"); }); 
 
 // NewsManager instance.
-const newsManager = new NewsManager();
+// const newsManager = new NewsManager();
+app.use('/api/news-sources', newsSourceRoutes);
 
 app.use('/news', async (req, res) => {
-    const sourcesdbFile = __dirname + `/${process.env.SOURCESDB_DIR}/${process.env.SOURCESDB_FILE}`;
-    newsManager.loadSources(sourcesdbFile);
     res.json({hasData:  (newsManager.sources && newsManager.sources.length > 0)});
 });
 
@@ -38,9 +39,8 @@ app.use('/processSources', async (req, res) => {
     });
     console.log(inputUrls);
 
-    newsManager.reset(inputUrls);
-    newsManager.processSources().then(() => {
-        newsManager.saveSources(sourcesdbFile); 
+    newsManager.processSources(inputUrls).then(() => {
+        newsManager.saveSources(); 
     });
     res.json({ jobsCount: inputUrls.length, currentJob: 0,  message: `Starting obtaining news from ${inputUrls.length} sources` });
 });
