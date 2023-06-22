@@ -5,6 +5,7 @@ const axios = require('axios');
 const { URL } = require('url');
 const { JSDOM } = require("jsdom");
 const { Readability } = require('@mozilla/readability');
+const { NewsSourceType } = require('../models/newsSource.js');
 
 class NewsSourceProcessor {
     constructor(urlString, requireFetchArticles){
@@ -12,6 +13,8 @@ class NewsSourceProcessor {
             this.url = new URL(urlString);
             this.name = this.url.hostname;
         }
+        this.idRef = null; // this MongoDB id reference
+        this.type = NewsSourceType.ApiFeed;
         this.data = null;
         this.articles = [];
         this.fetchingSourceSuccess = false;
@@ -20,20 +23,6 @@ class NewsSourceProcessor {
         this.requireFetchArticles = requireFetchArticles;
         this.fetchingArticlesSuccess = false;
         this.fetchingArticlesFinished = false;
-    }
-
-    saveToConfig() {
-        // Exclude non-serializableProp from serialization
-        return {
-          // name: this.name,
-          url: this.url.href,
-          requireFetchArticles: this.requireFetchArticles,
-        };
-    }
-
-    loadFromConfig() {
-        // Find file with this.name and load its content
-       this._loadSourceData(true);
     }
 
     async download(){
@@ -57,7 +46,26 @@ class NewsSourceProcessor {
         });
     }   
 
-    async downloadArticle(article){
+    async downloadArticles(){
+        let promises = [];
+        this.articles.forEach(async article => {
+            promises.push(this._downloadArticle(article));
+        });
+        return Promise.all(promises)
+            .then(() => {
+                this.fetchingArticlesSuccess = true;
+            })
+            .catch((err) => {
+                console.log(err);
+                this.fetchingArticlesSuccess = false;
+                // throw err;
+            })
+            .finally(() => { 
+                this.fetchingArticlesFinished = true; 
+            });
+    }
+
+    async _downloadArticle(article){
         // internal function to assign data to article.contentData
         function assignContentData(article, data, sourceName){
             const sourcesdir = process.env.SOURCESDB_DIR;
@@ -93,25 +101,6 @@ class NewsSourceProcessor {
         });
     }   
 
-    async downloadArticles(){
-        let promises = [];
-        this.articles.forEach(async article => {
-            promises.push(this.downloadArticle(article));
-        });
-        return Promise.all(promises)
-            .then(() => {
-                this.fetchingArticlesSuccess = true;
-            })
-            .catch((err) => {
-                console.log(err);
-                this.fetchingArticlesSuccess = false;
-                // throw err;
-            })
-            .finally(() => { 
-                this.fetchingArticlesFinished = true; 
-            });
-    }
-
     _castSourceItemsToArticles(sourceDataItems) {
         if (!sourceDataItems || sourceDataItems.length == 0){
             return null;
@@ -133,6 +122,61 @@ class NewsSourceProcessor {
         const reader = new Readability(document);
         const article = reader.parse();      
         return article.textContent.replace(/\s+/g, " ").trim();
+    }
+
+    calculateHash() {
+        if (!this.articles) return null;
+
+        // Sort the array
+        let arr = this.articles.map(x => x.url);
+        arr.sort();
+    
+        // Concatenate the sorted strings into one
+        let str = arr.join('');
+    
+        // Create a hash of the string
+        let hash = crypto.createHash('sha256');
+        hash.update(str);
+    
+        // Return the hexadecimal representation of the hash
+        return hash.digest('hex');
+    }
+
+    toNewsSource() {
+        return {
+            url: this.url.href,
+            preloadedContent: !(this.requireFetchArticles),
+            type: this.type,
+            lastQueryDate: new Date()
+            // lastQueryHash: this.calculateHash()
+        };
+    }
+
+    fromNewsSource(newsSource) {
+        this.idRef = newsSource._id;
+        this.url = new URL(newsSource.url);
+        this.name = this.url.hostname;
+        this.requireFetchArticles = !(newsSource.preloadedContent);
+        this.type = newsSource.type;
+        this.lastQueryDate = newsSource.lastQueryDate; 
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////
+    // Data IO
+    ///////////////////////////////////////////////////////////////////////////////////
+
+    saveToConfig() {
+        // Exclude non-serializableProp from serialization
+        return {
+          // name: this.name,
+          url: this.url.href,
+          requireFetchArticles: this.requireFetchArticles,
+        };
+    }
+
+    loadFromConfig() {
+        // Find file with this.name and load its content
+       this._loadSourceData(true);
     }
 
     _saveSourceData(sourceData, sourceDataItems){

@@ -1,32 +1,48 @@
 require('dotenv').config();
-
+const mongoose = require('mongoose');
 const fs = require('fs');
 const { NewsSourceProcessor } = require('./newssource-processor.js');
 const { RssNewsSourceProcessor } = require('./rssnewssource-processor.js');
+const { NewsSource } = require('../models/newsSource.js');
 
 // NewsManager class that holds all temporary data on news getting, parsing and summarization.
 // const newsManager = new NewsManager();
 const newsManager = new class{
 // class NewsManager {
     constructor() {
-        this.sources = [];
-        // this.articles = [];
-        this.curFetchingSource = null;
+        this._reset();
         this._loadSources();
     }
 
+    initializeDB(dbConnection){
+        this._db = dbConnection;
+    }
+
+    _reset() {
+        this.sources = [];
+        // this.articles = [];
+        this.curFetchingSource = null;
+    }
+
     async processSources(urls) {
-    
+        // Delete all currently stored sources and start  
+        // processing of the new 'urls'
+        this._reset();
+
         let promises = [];
         urls.forEach(async url => {
             const newsSource = this.createNewsSource(url);
             this.sources.push(newsSource);
-            promises.push(newsSource.download());
+            // promises.push(newsSource.download());
         });
-        return Promise.all(promises).catch((err) => {
+        return Promise.all(promises)
+        .catch((err) => {
             console.log(err);
             throw err;
-          });
+        })
+        .finally(async () => {
+            this._saveSources(); 
+        });
     }
 
     createNewsSource(url){
@@ -117,8 +133,51 @@ const newsManager = new class{
 
         }
     }  
+    
+    async _saveSources() {
+        this._saveSourcesToFile();
+        this._saveSourcesToMongoDB();
+    }
+
+    async _loadSources() {
+        this._loadSourcesFromFile();
+    }
+
+    // Get array of newsSources which 'url' field may equal to this.sources[i].url. 
+
+
+    async _saveSourcesToMongoDB() {
+
+        const newsSources = this.sources.map(x => x.toNewsSource());
+
+        // Bulk update all newsSources in the database
+        let bulkOps = newsSources.map(newsSource => ({
+            updateOne: {
+                filter: { url: newsSource.url },
+                update: { $set: newsSource },
+                options: { upsert: true, new: true }
+            }
+        }));
+
+        NewsSource.bulkWrite(bulkOps).then(res => {
+            if(res.ok){
+                NewsSource.find({ url: { $in: newsSources.map(source => source.url) } }).then(async (dbNewsSources) => {
+                    dbNewsSources.forEach(async (dbNewsSource) => {
+                        // Update this.sources with latest data from the MongoDB
+                        const localSourceProcessor = this.sources.find(source => source.url.href === dbNewsSource.url);
+                        localSourceProcessor.fromNewsSource(dbNewsSource);
+                        console.log(localSourceProcessor);
+                    });        
+                })                
+            }
+        })
+        .catch(err => {
+            console.log(err)
+        });
+    }
+
     // saveSources function saves this.sources in sourcesdb.json file   
-    saveSources() {
+    _saveSourcesToFile() {
         if (!this.sources) return;
 
         const serializedObjects = this.sources.map((obj) => {
@@ -133,7 +192,7 @@ const newsManager = new class{
         fs.writeFileSync(filename, json);
     }
     
-    _loadSources() {
+    _loadSourcesFromFile() {
         // const obj = new RssNewsSource("https://some.com", false);
         // obj.newMethod();
         // return;
