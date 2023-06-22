@@ -10,16 +10,17 @@ const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 
-const newsManager = require('./services/newsmanager.js');
-const newsSourceRoutes = require('./routes/newsSourceRoutes');
-
 // Connect mongoose and MongoDB
 mongoose.connect(process.env.MONGODB_ATLAS_CS, { useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.connection.on('error', console.error.bind(console, 'connection error:'));
 mongoose.connection.once('open', function() { console.log("Connected to MongoDB Atlas"); }); 
 
-// NewsManager instance.
-// const newsManager = new NewsManager();
+// Import routes and data
+const newsManager = require('./services/newsmanager.js');
+const newsSourceRoutes = require('./routes/newsSourceRoutes');
+
+newsManager.initializeDB(mongoose.connection);
+
 app.use('/api/news-sources', newsSourceRoutes);
 
 app.use('/news', async (req, res) => {
@@ -39,9 +40,7 @@ app.use('/processSources', async (req, res) => {
     });
     console.log(inputUrls);
 
-    newsManager.processSources(inputUrls).then(() => {
-        newsManager.saveSources(); 
-    });
+    newsManager.processSources(inputUrls);
     res.json({ jobsCount: inputUrls.length, currentJob: 0,  message: `Starting obtaining news from ${inputUrls.length} sources` });
 });
 

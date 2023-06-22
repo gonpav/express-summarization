@@ -17,14 +17,22 @@ const myInstance = new MyClass(NumberEnum.ONE);
 console.log(myInstance.type); // Output: 1
 */
 
-NewsSourceModelSchema = new mongoose.Schema({
+const NewsSourceType = Object.freeze({
+  RssFeed: 1,
+  ApiFeed: 2
+});
+
+
+NewsSourceSchema = new mongoose.Schema({
   url: String,
   preloadedContent: Boolean, // If true, then the content is already loaded
   type: Number,
+  lastQueryDate: Date,
+  // lastQueryHash: String 
   // Other properties here...
 });
 
 // TO-DO: ChatGPT how to create a model and migrations
-// const NewsSourceModel = mongoose.model('NewsSourceModel', NewsSourceModelSchema);
+const NewsSource = mongoose.model('NewsSource', NewsSourceSchema);
 
-// module.exports = NewsSourceModel;
+module.exports = { NewsSource, NewsSourceType };

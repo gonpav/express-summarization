@@ -1,4 +1,5 @@
-const { NewsSourceProcessor: NewsSource } = require('./newssource-processor.js');
+const { NewsSourceType } = require('../models/newsSource.js');
+const { NewsSourceProcessor } = require('./newssource-processor.js');
 const Parser = require('rss-parser');
 
 const parser = new Parser();
@@ -13,9 +14,10 @@ const parser = new Parser();
 // <category>Dynamic Island</category>
 // <description
 
-class RssNewsSourceProcessor extends NewsSource {
+class RssNewsSourceProcessor extends NewsSourceProcessor {
     constructor(urlString, requireFetchArticles){
         super(urlString, requireFetchArticles);
+        this.type = NewsSourceType.RssFeed;
     }    
 
     saveToConfig() {
