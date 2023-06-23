@@ -33,7 +33,7 @@ const newsManager = new class{
         urls.forEach(async url => {
             const newsSource = this.createNewsSource(url);
             this.sources.push(newsSource);
-            // promises.push(newsSource.download());
+            promises.push(newsSource.download());
         });
         return Promise.all(promises)
         .catch((err) => {
@@ -120,7 +120,7 @@ const newsManager = new class{
         }
 
         if(!this.curFetchingSource){
-            const message = extendMessageWithNextSource(`No articles are currently downloaded`, this._nextNewsSourceToFetchArticles());
+            const message = extendMessageWithNextSource(`No more new articles downloaded`, this._nextNewsSourceToFetchArticles());
             return { jobsCount: 0, currentJob: 0,  message: message };
         }
         else if(this.curFetchingSource.fetchingArticlesFinished){
@@ -155,7 +155,7 @@ const newsManager = new class{
             updateOne: {
                 filter: { url: newsSource.url },
                 update: { $set: newsSource },
-                options: { upsert: true, new: true }
+                upsert: true // options: { upsert: true, new: true }
             }
         }));
 
@@ -166,7 +166,7 @@ const newsManager = new class{
                         // Update this.sources with latest data from the MongoDB
                         const localSourceProcessor = this.sources.find(source => source.url.href === dbNewsSource.url);
                         localSourceProcessor.fromNewsSource(dbNewsSource);
-                        console.log(localSourceProcessor);
+                        // console.log(localSourceProcessor);
                     });        
                 })                
             }

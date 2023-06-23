@@ -108,7 +108,7 @@ https://www.engadget.com/rss.xml
 
       axios.get('/processArticles')
       .then(async response => {
-        
+        let disableLoadArticles = false;
         while (true) {
           // update status bar
           document.getElementById('statusBar').value = document.getElementById('statusBar').value + response.data.message + '\r\n';
@@ -116,6 +116,9 @@ https://www.engadget.com/rss.xml
           const jobsCount = response.data.jobsCount;
           const currentJob = response.data.currentJob;
           if (currentJob === jobsCount) {
+            if (jobsCount === 0 && response.data.message && !response.data.message.includes('Load Articles')){
+              disableLoadArticles = true;
+            }
             break;
           }
           // Call axios.get every 2000 ms to get the status of the job
@@ -143,7 +146,7 @@ https://www.engadget.com/rss.xml
 
         // enable loadSourcesBtn button
         document.getElementById('loadSourcesBtn').disabled = false;
-        document.getElementById('loadArticlesBtn').disabled = false;
+        document.getElementById('loadArticlesBtn').disabled = disableLoadArticles;
       })
       .catch(error => {
         console.log(error);

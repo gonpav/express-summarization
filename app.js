@@ -29,7 +29,7 @@ app.use('/news', async (req, res) => {
 
 app.use('/processSourcesStatus', async (req, res) => {
     const processingStatus = newsManager.processSourcesStatus();
-    console.log(processingStatus);
+    // console.log(processingStatus);
     res.json(processingStatus);
 });
 
@@ -46,7 +46,7 @@ app.use('/processSources', async (req, res) => {
 
 app.use('/processArticlesStatus', async (req, res) => {
     const processingStatus = newsManager.processArticlesStatus();
-    console.log(processingStatus);
+    //console.log(processingStatus);
     newsManager.resetFetchingArticlesCurrentNewsSource(); // Reset fetching if finished;
     res.json(processingStatus);
 });

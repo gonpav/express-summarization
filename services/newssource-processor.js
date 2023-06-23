@@ -6,6 +6,7 @@ const { URL } = require('url');
 const { JSDOM } = require("jsdom");
 const { Readability } = require('@mozilla/readability');
 const { NewsSourceType } = require('../models/newsSource.js');
+const { Article } = require('../models/article.js');
 
 class NewsSourceProcessor {
     constructor(urlString, requireFetchArticles){
@@ -47,22 +48,25 @@ class NewsSourceProcessor {
     }   
 
     async downloadArticles(){
-        let promises = [];
-        this.articles.forEach(async article => {
-            promises.push(this._downloadArticle(article));
-        });
-        return Promise.all(promises)
-            .then(() => {
-                this.fetchingArticlesSuccess = true;
-            })
-            .catch((err) => {
-                console.log(err);
-                this.fetchingArticlesSuccess = false;
-                // throw err;
-            })
-            .finally(() => { 
-                this.fetchingArticlesFinished = true; 
+        return this._removeFetchedArticles().then(async () => {
+            let promises = [];
+            this.articles.forEach(async article => {
+                promises.push(this._downloadArticle(article));
             });
+            return Promise.all(promises)
+                .then(() => {
+                    this.fetchingArticlesSuccess = true;
+                })
+                .catch((err) => {
+                    console.log(err);
+                    this.fetchingArticlesSuccess = false;
+                    // throw err;
+                })
+                .finally(() => { 
+                    this.fetchingArticlesFinished = true; 
+                    this._saveArticles();
+                });
+        });
     }
 
     async _downloadArticle(article){
@@ -81,7 +85,6 @@ class NewsSourceProcessor {
                 resolve();
                 return;
             }
-
             // otherwise fetch the data
             axios.get(article.link)
             .then((response) => {
@@ -93,10 +96,11 @@ class NewsSourceProcessor {
                 resolve();
             })
             .catch(error => {
-                console.error(error);
-                // reject(error); // we will not reject to avoid downloading other articles
+                console.error(error);                
                 article.contentData = null;
+                article.retryCount += 1;
                 article.lastError = error.message;
+                resolve(); // we will not reject() but resolve() to continue downloading other articles
             });
         });
     }   
@@ -106,12 +110,14 @@ class NewsSourceProcessor {
             return null;
         }
         return sourceDataItems.map(feedObject => {
+            // Sort of c-tor of the ArticleDTO
             return {
                 title: feedObject.title,
                 link: feedObject.link || feedObject.url,
                 author: feedObject.creator || feedObject.author,
                 pubDate: feedObject.pubDate || feedObject.publishedAt,
-                contentSnippet: feedObject.contentSnippet || feedObject.content
+                contentSnippet: feedObject.contentSnippet || feedObject.content,
+                retryCount: 0   // Important to initialize this with 0 here
                 }
             });
     }
@@ -161,6 +167,113 @@ class NewsSourceProcessor {
         this.lastQueryDate = newsSource.lastQueryDate; 
     }
 
+    async _removeFetchedArticles() {
+        if (!this.idRef) throw new Error(`The source ${this.name} is not initialized with idRef`);
+
+        const MAX_RETRY_COUNT = 3;
+
+        return new Promise((resolve, reject) => {
+            
+            Article.find({ 
+                sourceId: this.idRef,
+                link: { $in: this.articles.map(article => article.link) } 
+            }).then(async (dbArticles) => {
+                let newArticles = [];
+
+                // iterate over this.articles, find articles with the same 'link' in dbArticles,
+                // and update the article with the latest data from the MongoDB. 
+                // For those this.articles that were not found in the MongoDB or have no 'contentData' (retried less than 3 times)
+                // leave them in this.articles for further contentData fetching
+                this.articles.forEach(async (localArticle) => {
+                    const dbArticle = dbArticles.find(article => article.link === localArticle.link);
+                    if (dbArticle) {
+                        localArticle.idRef = dbArticle._id;
+                        localArticle.retryCount = dbArticle.retryCount;
+                    }
+                    if (!dbArticle || (!dbArticle.contentData && dbArticle.retryCount < MAX_RETRY_COUNT)) {
+                        newArticles.push(localArticle);
+                    }
+                });
+                // Reassign articles to those that we actually need to fetch 'contentData'
+                this.articles = newArticles;
+                resolve();
+            })
+            .catch(error => {
+                console.error(error);
+                resolve(); // still resolve to continue.
+            })   
+        });
+    }
+
+    _toArticle(localArticle) {
+        let dbArticle = {
+            title: localArticle.title,
+            link: localArticle.link,
+            author: localArticle.author,
+            publishedDate: localArticle.pubDate,
+            lastQueryDate: new Date(), 
+            contentData: localArticle.contentData,
+            retryCount: localArticle.retryCount,
+            lastError: localArticle.lastError,
+            sourceId: this.idRef
+        };
+        if (localArticle.idRef) {
+            dbArticle._id = localArticle.idRef;
+        }
+        return dbArticle;       
+    }
+
+    _fromArticle(dbArticle) {
+        return {
+            idRef: dbArticle._id,
+            title: dbArticle.title,
+            link: dbArticle.link,
+            author: dbArticle.author,
+            pubDate: dbArticle.publishedDate,
+            lastQueryDate: dbArticle.lastQueryDate,
+            contentData: dbArticle.contentData,
+            retryCount: dbArticle.retryCount,
+            lastError: dbArticle.lastError,
+            sourceId: dbArticle.sourceId,
+            }
+    }
+
+    async _saveArticles() {
+        const dbArticles = this.articles.map(x => this._toArticle(x));
+        // Bulk update all Articles in the database
+        let bulkOps = dbArticles.map(article => ({
+            updateOne: {
+                filter: { sourceId: article.sourceId /*this.idRef*/, link: article.link },
+                update: { $set: article },
+                upsert: true 
+            }
+        }));     
+
+        Article.bulkWrite(bulkOps).then(res => {
+            if(res.ok){
+                // Probably next code is not required at all!!! It is here for testing purposes
+                Article.find({ sourceId: this.idRef, link: { $in: this.articles.map(article => article.link) } }).then(async (dbArticlesRes) => {
+                    dbArticlesRes.forEach(async (dbArticle) => {
+                        // Update this.articles with latest data from the MongoDB
+                        let localArticle = this.articles.find(article => article.link === dbArticle.link);
+                        const index = this.articles.indexOf(localArticle);
+                        if(index !== -1) {
+                            localArticle = this._fromArticle(dbArticle);
+                            this.articles[index] = localArticle;
+                            //console.log(localArticle);
+                            //console.log(this.articles.find(article => article.link === dbArticle.link));
+                        }
+                        else {
+                            console.log(`Error: failed to update article from DB: ${localArticle.title}`);
+                        }
+                    });        
+                })                
+            }
+        })
+        .catch(err => {
+            console.log(err)
+        });           
+    }
     ///////////////////////////////////////////////////////////////////////////////////
     // Data IO
     ///////////////////////////////////////////////////////////////////////////////////
