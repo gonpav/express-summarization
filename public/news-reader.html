@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Express App</title>
+</head>
+<body>
+  <h1>News</h1>
+  <!-- Label 'Enter resources URLs separated by new line' -->
+  <label for="">Enter resources URLs separated by new line:</label><br/>
+  <!-- Multiline text input field -->
+  <textarea id="newsText" rows="10" cols="150">
+http://newsapi.org/v2/top-headlines?sources=cnn&apiKey=e5d6cfd4bf1b439c81f158a186abe945
+https://appleinsider.com/rss/news/
+https://feeds.macrumors.com/
+https://9to5mac.com/feed/
+https://www.macworld.com/feed
+https://www.theverge.com/apple/rss/index.xml
+https://www.cultofmac.com/feed/
+https://www.imore.com/rss.xml
+https://www.engadget.com/rss.xml
+  </textarea><br/>
+  <!-- Submit button next to it -->
+  <input id="loadSourcesBtn" type="submit" value="Read News"/>
+  <!-- Hidden Load Articles button next to it -->
+  <input id="loadArticlesBtn" type="submit" value="Load Articles" hidden/><br/>
+  
+  <!--- Status bar (disabled text input bar) with width area the same as "newsText" above-->
+  <br/>
+  <textarea id="statusBar" type="text" disabled rows="2" cols="150">Waiting... press "Read News" to start a job</textarea><br/>
+  
+  <!-- Table containing news stories -->
+  <table id="newsTable">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Summary</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+
+  </script>
+  <!-- Load Sources (Read News button pressed): rss and other sources feed loader -->
+  <script>
+    document.getElementById('loadSourcesBtn').onclick = () => {
+
+      // Get the value of textarea by id
+      const newsURLs = document.getElementById('newsText').value;
+      if (!newsURLs || newsURLs == "") {
+        alert("Please enter URLs");
+        return false;
+      }
+      // get array of URLs out of newsURLs
+      const newsURLsArray = newsURLs.split("\n");
+
+      // disable loadSourcesBtn button
+      document.getElementById('loadSourcesBtn').disabled = true;
+      document.getElementById('loadArticlesBtn').disabled = true;
+      document.getElementById('statusBar').value = "";
+            
+      // Submit the value using POST request and POST endpoint
+      axios.post('/newsreader/processSources', { text: newsURLsArray })
+      .then(async response => {
+        
+        while (true) {
+          // update status bar
+          document.getElementById('statusBar').value = document.getElementById('statusBar').value + response.data.message + '\r\n';
+          
+          const jobsCount = response.data.jobsCount;
+          const currentJob = response.data.currentJob;
+          if (currentJob === jobsCount) {
+            break;
+          }
+          // Call axios.get every 1000 ms to get the status of the job
+          // and update the status bar
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          axios.get('/newsreader/processSourcesStatus')
+          .then(response2 => {
+            // update status bar
+            response = response2;
+          });
+        }
+
+        // enable loadSourcesBtn button
+        document.getElementById('loadSourcesBtn').disabled = false;
+        document.getElementById('loadArticlesBtn').hidden = false;
+        document.getElementById('loadArticlesBtn').disabled = false;
+      })
+      .catch(error => {
+        console.log(error);
+      });  
+    };
+  </script>
+
+   <!-- Load Articles: load content of the articles -->
+  <script>
+    document.getElementById('loadArticlesBtn').onclick = () => {
+      // Get the value of textarea by id
+      document.getElementById('loadSourcesBtn').disabled = true;
+      document.getElementById('loadArticlesBtn').disabled = true;
+
+      axios.get('/newsreader/processArticles')
+      .then(async response => {
+        let disableLoadArticles = false;
+        while (true) {
+          // update status bar
+          document.getElementById('statusBar').value = document.getElementById('statusBar').value + response.data.message + '\r\n';
+          
+          const jobsCount = response.data.jobsCount;
+          const currentJob = response.data.currentJob;
+          if (currentJob === jobsCount) {
+            if (jobsCount === 0 && response.data.message && !response.data.message.includes('Load Articles')){
+              disableLoadArticles = true;
+            }
+            break;
+          }
+          // Call axios.get every 2000 ms to get the status of the job
+          // and update the status bar
+          await new Promise(resolve => setTimeout(resolve, 2000));
+
+          axios.get('/newsreader/processArticlesStatus')
+          .then(response2 => {
+            // update status bar
+            response = response2;
+            if (response.data.articles){
+              const tableBody = document.querySelector('#newsTable tbody');
+
+              response.data.articles.forEach(article => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                  <td><a href="${article.link}"/>${article.title}</td>
+                  <td>${article.lastError ? article.lastError : article.contentData}</td>
+                `;
+                tableBody.appendChild(row);
+              });     
+            }       
+          });
+        }
+
+        // enable loadSourcesBtn button
+        document.getElementById('loadSourcesBtn').disabled = false;
+        document.getElementById('loadArticlesBtn').disabled = disableLoadArticles;
+      })
+      .catch(error => {
+        console.log(error);
+      });  
+    };
+  </script>
+    
+</body>
+</html>
