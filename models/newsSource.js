@@ -10,7 +10,6 @@ NewsSourceSchema = new mongoose.Schema({
   preloadedContent: Boolean, // If true, then the content is already loaded
   type: Number,
   lastQueryDate: Date,
-  // lastQueryHash: String 
   // Other properties here...
 });
 

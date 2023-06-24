@@ -20,17 +20,11 @@ class RssNewsSourceProcessor extends NewsSourceProcessor {
         this.type = NewsSourceType.RssFeed;
     }    
 
-    saveToConfig() {
-        // Exclude non-serializableProp from serialization
-        return {
-          ...super.saveToConfig(),
-        };
-    }
-
     async download(){
         return new Promise((resolve, reject) => {
             parser.parseURL(this.url.href).then(feed => {
-                this._saveSourceData(feed, feed.items);                
+                this.data = feed;
+                this.articles = this._castSourceItemsToArticles(feed.items);        
                 this.fetchingSourceSuccess = true;
                 //console.log(this.articles);
                 resolve();

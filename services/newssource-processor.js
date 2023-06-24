@@ -30,7 +30,8 @@ class NewsSourceProcessor {
         return new Promise((resolve, reject) => {
             axios.get(this.url.href)
             .then(response => {
-                this._saveSourceData(response.data, response.data.articles);
+                this.data = response.data;
+                this.articles = this._castSourceItemsToArticles(response.data.articles);
                 this.fetchingSourceSuccess = true;
                 //console.log(this.articles);
                 resolve();
@@ -130,31 +131,12 @@ class NewsSourceProcessor {
         return article.textContent.replace(/\s+/g, " ").trim();
     }
 
-    calculateHash() {
-        if (!this.articles) return null;
-
-        // Sort the array
-        let arr = this.articles.map(x => x.url);
-        arr.sort();
-    
-        // Concatenate the sorted strings into one
-        let str = arr.join('');
-    
-        // Create a hash of the string
-        let hash = crypto.createHash('sha256');
-        hash.update(str);
-    
-        // Return the hexadecimal representation of the hash
-        return hash.digest('hex');
-    }
-
     toNewsSource() {
         return {
             url: this.url.href,
             preloadedContent: !(this.requireFetchArticles),
             type: this.type,
             lastQueryDate: new Date()
-            // lastQueryHash: this.calculateHash()
         };
     }
 
@@ -273,77 +255,6 @@ class NewsSourceProcessor {
         .catch(err => {
             console.log(err)
         });           
-    }
-    ///////////////////////////////////////////////////////////////////////////////////
-    // Data IO
-    ///////////////////////////////////////////////////////////////////////////////////
-
-    saveToConfig() {
-        // Exclude non-serializableProp from serialization
-        return {
-          // name: this.name,
-          url: this.url.href,
-          requireFetchArticles: this.requireFetchArticles,
-        };
-    }
-
-    loadFromConfig() {
-        // Find file with this.name and load its content
-       this._loadSourceData(true);
-    }
-
-    _saveSourceData(sourceData, sourceDataItems){
-        this.data = sourceData;
-        this.articles = this._castSourceItemsToArticles(sourceDataItems);
-        
-        const sourcesdir = process.env.SOURCESDB_DIR; 
-
-        if (this.articles && this.articles.length > 0) {
-            NewsSourceProcessor._saveToFile(this.name, sourcesdir, JSON.stringify (this.articles), 'json');
-        }
-        else {
-            NewsSourceProcessor._saveToFile(this.name, sourcesdir, this.data, 'txt');
-        }
-    }
-
-    _loadSourceData(loadContentData){
-        const sourcesdir = process.env.SOURCESDB_DIR;
-        let content = NewsSourceProcessor._loadFromFile(this.name, sourcesdir, 'json');
-        if (!content){
-            content = NewsSourceProcessor._loadFromFile(this.name, sourcesdir, 'txt');
-            if(content) {
-                this.data = content;
-            }
-        } 
-        else {
-            const source = JSON.parse(content);
-            this.articles = source;
-            if (loadContentData && this.articles){
-                for (let index = 0; index < this.articles.length; index++) {
-                    const article = this.articles[index];
-                    article.contentData = NewsSourceProcessor._loadFromFile(article.title.replace(/[^a-zA-Z0-9\.\-_]/g, '').substring(0,10), `${sourcesdir}/${this.name}`, 'txt');    
-                }
-            }
-        }
-    }
-
-    static _saveToFile(fileName, dirName, data, ext = 'txt'){
-        
-        const directoryPath = __dirname + `/${dirName}`;
-        if (!fs.existsSync(directoryPath)) {
-            fs.mkdirSync(directoryPath, { recursive: true });
-          }
-
-        const file = fs.createWriteStream(`${directoryPath}/${fileName}.${ext}`);
-        file.write(data);         
-    }
-
-    static _loadFromFile(fileName, dirName, ext){
-        const filePath = __dirname + `/${dirName}/${fileName}.${ext}`;
-        if (!fs.existsSync(filePath)) {
-            return null;
-        }
-        return fs.readFileSync(filePath, 'utf8');
     }
 }
 

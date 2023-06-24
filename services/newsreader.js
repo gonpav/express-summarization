@@ -9,7 +9,6 @@ const { NewsSource } = require('../models/newsSource.js');
 const newsReader = new class{
     constructor() {
         this._reset();
-        this._loadSources();
     }
 
     initializeDB(dbConnection){
@@ -133,19 +132,6 @@ const newsReader = new class{
     }  
     
     async _saveSources() {
-        this._saveSourcesToFile();
-        this._saveSourcesToMongoDB();
-    }
-
-    async _loadSources() {
-        this._loadSourcesFromFile();
-    }
-
-    // Get array of newsSources which 'url' field may equal to this.sources[i].url. 
-
-
-    async _saveSourcesToMongoDB() {
-
         const newsSources = this.sources.map(x => x.toNewsSource());
 
         // Bulk update all newsSources in the database
@@ -172,63 +158,6 @@ const newsReader = new class{
         .catch(err => {
             console.log(err)
         });
-    }
-
-    // saveSources function saves this.sources in sourcesdb.json file   
-    _saveSourcesToFile() {
-        if (!this.sources) return;
-
-        const serializedObjects = this.sources.map((obj) => {
-          const className = obj.constructor.name;
-          const serializedData = JSON.stringify(obj.saveToConfig());
-          return { className, data: serializedData };
-        });
-      
-        const json = JSON.stringify(serializedObjects, null, 2);
-        
-        const filename = __dirname + `/${process.env.SOURCESDB_DIR}/${process.env.SOURCESDB_FILE}`;
-        fs.writeFileSync(filename, json);
-    }
-    
-    _loadSourcesFromFile() {
-        // const obj = new RssNewsSource("https://some.com", false);
-        // obj.newMethod();
-        // return;
-        
-        // We do NOT load sources from the Database if there were loaded previously. 
-
-        if (this.sources && this.sources.length > 0) return;
-
-        const filename = __dirname + `/${process.env.SOURCESDB_DIR}/${process.env.SOURCESDB_FILE}`;
-
-        if (!fs.existsSync(filename)) return;
-
-        const json = fs.readFileSync(filename, 'utf8');
-        const serializedObjects = JSON.parse(json);
-      
-        const objects = serializedObjects.map((serializedObj) => {
-          const className = serializedObj.className;
-          const data = JSON.parse(serializedObj.data);
-      
-          switch (className) {
-            case 'NewsSourceProcessor':
-              return new NewsSourceProcessor(data.url, data.requireFetchArticles);
-      
-            case 'RssNewsSourceProcessor':
-              return new RssNewsSourceProcessor(data.url, data.requireFetchArticles);
-      
-            // Add more cases for other classes if necessary
-      
-            default:
-              throw new Error(`Unknown class: ${className}`);
-          }
-        });
-      
-        this.sources = objects;
-        for (let index = 0; index < this.sources.length; index++) {
-            const source = this.sources[index];
-            source.loadFromConfig();            
-        }
     }
 }
 
