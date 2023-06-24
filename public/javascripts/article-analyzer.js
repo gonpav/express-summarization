@@ -3,7 +3,7 @@ let articles = null;
 
 // On document load 
 document.addEventListener('DOMContentLoaded', function() {
-
+    enableAnalyzeButton (false);
     axios
     .get('/newssources')
     .then(async response => {
@@ -69,7 +69,7 @@ function updateArticleData(selectValue){
    
     document.getElementById("label1").innerHTML = article ? `<b>Title</b>: ${article.title}` : null;
     document.getElementById("label2").innerHTML = article ? `<b>Published on</b>: ${article.pubDate}` : null;
-    document.getElementById("label3").innerHTML = article ? `<b>Url</b>: ${article.link}` : null;
+    document.getElementById("label3").innerHTML = article ? `<b>Url</b>: <a href="${article.link}" target="_blank" class="text-blue-500 underline">${article.link}</a>` : null;
     document.getElementById("label4").innerHTML = article ? `<b>Snippet</b>: ${article.contentData}` : null;
 
     if (article) {
@@ -79,8 +79,8 @@ function updateArticleData(selectValue){
             placement: 'right'
         });
     }
-
-    document.getElementById("textArea2").innerText = article ? `${article.contentData}` : null;
+    enableAnalyzeButton(article);
+    // document.getElementById("textArea2").innerText = article ? `${article.contentData}` : null;
     // document.getElementById("textArea3").innerText = article ? `${article.contentData}` : null;
 }
 
@@ -101,3 +101,43 @@ function dropDownOnChange(selectElement) {
     }
 }
 
+function enableAnalyzeButton(enable) {
+    // bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded
+    const btn = document.getElementById("btnAnalyze");
+    btn.disabled = !enable;
+    if(enable) {
+        btn.className = 'bg-blue-500 text-white font-bold py-2 px-4 rounded'; 
+    }
+    else {
+        btn.className = 'bg-blue-500 text-white font-bold py-2 px-4 rounded opacity-50 cursor-not-allowed';
+    }
+}
+
+document.getElementById('btnAnalyze').onclick = () => {
+
+    // Get the value of textarea by id
+    const prompt = document.getElementById('textArea').value;
+    if (!prompt || prompt == "") {
+      alert("Please enter Prompt");
+      return false;
+    }
+
+    enableAnalyzeButton(false);
+
+    var selectValue = document.getElementById('dropdown2').value;   
+    const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;
+
+    // Submit the value using POST request and POST endpoint
+    axios.post(`/articles/analyze/${article.id}`, { text: prompt })
+    .then(async response => {
+      
+        document.getElementById('textArea2').innerText = response.data.message;
+
+        // enable loadSourcesBtn button
+        enableAnalyzeButton(true);
+    })
+    .catch(error => {
+        console.log(error);
+        enableAnalyzeButton(true);
+    });  
+  };

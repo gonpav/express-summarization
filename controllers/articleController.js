@@ -11,6 +11,7 @@ exports.getArticlesBySourceId = function(req, res) {
     .then(items => {
         const articles = items.map((x) => {
             return {
+                id: x._id,
                 title: x.title,
                 link: x.link,
                 author: x.author,
@@ -21,4 +22,12 @@ exports.getArticlesBySourceId = function(req, res) {
         }); 
         res.json(articles);
     });        
+};
+
+exports.analyzeArticleById = function(req, res) {
+    const articleId = req.params.id;
+    const prompt = req.body.text;
+    console.log(articleId);
+    console.log(prompt);      
+    res.json({ message: `Start analyzing with ChatGPT 3.5 the contents of the article with id ${articleId}. Please wait...` });
 };

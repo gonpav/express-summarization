@@ -26,32 +26,38 @@
         <label id="label3" class="block w-2/3 mb-2"></label>
         <label id="label4" class="block w-2/3 line-clamp-1 cursor-help"></label>
     </div>
-    <div class="mt-4 grid grid-cols-3 gap-4">
+    <!-- <div class="mt-4 grid grid-cols-3 gap-4">
         <div>
-            <select id="dropdown3" class="w-full p-2 border border-gray-300 rounded dropdown-placeholder" onchange="dropDownOnChange(this)">
-                <!-- <option value="" selected class="dropdown-placeholder">Select extracted metadata</option> -->
-            </select>
+            <select id="dropdown3" class="w-full p-2 border border-gray-300 rounded dropdown-placeholder" onchange="dropDownOnChange(this)">                
+            </select> 
         </div>
         <div class="col-start-3 text-right">
             <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Extract</button>
         </div>
-    </div>
+    </div> -->
     <div class="mt-4 grid grid-cols-3 gap-4">
         <div class="col-span-2">
-            <textarea id="textArea" class="w-full p-2 border border-gray-300 rounded" rows="6"></textarea>
+            <textarea id="textArea" class="w-full p-2 border border-gray-300 rounded" rows="7"> In the text below, enclosed within <<< and >>> symbols, identify a short list of the same main events, individuals, and phenomena. Write a definition for each of them in such a way that it includes the key features that can be used to compare them to other events, individuals, or phenomena. Also calculate a relevance score for each identified event, individuals and phenomena. Write output in JSON format with "name", "definition" and "relevance_score" fields for all identified "events", "individuals", and "phenomena".
+<<<
+{article} 
+>>>
+            </textarea>
         </div>
         <div>
-            <select id="dropdown4" class="w-full mb-2 p-2 border border-gray-300 rounded"></select>
-            <select id="dropdown5" class="w-full p-2 border border-gray-300 rounded"></select>
+            <!-- <select id="dropdown4" class="w-full mb-2 p-2 border border-gray-300 rounded"></select>
+            <select id="dropdown5" class="w-full p-2 border border-gray-300 rounded"></select><br/><br/> -->
+            <button id="btnAnalyze" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" disabled>Analyze</button>
         </div>
     </div>
-    <div class="mt-4 grid grid-cols-2 gap-4">
-        <div>
-            <textarea id="textArea2" class="w-full p-2 border border-gray-300 rounded" rows="6"></textarea>
+    
+    <div class="mt-4 grid grid-cols-3 gap-4"> <!-- <div class="mt-4 grid grid-cols-2 gap-4"> -->   
+        <div class="col-span-2"> <!--  <div> -->
+            <textarea id="textArea2" class="w-full p-2 border border-gray-300 rounded" rows="7">
+            </textarea>
         </div>
-        <div>
+        <!-- <div>
             <textarea id="textArea3" class="w-full p-2 border border-gray-300 rounded" rows="6"></textarea>
-        </div>
+        </div> -->
     </div>
 
     <script src="https://unpkg.com/@popperjs/core@2"></script>
