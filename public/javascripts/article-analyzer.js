@@ -116,8 +116,9 @@ document.getElementById('btnAnalyze').onclick = () => {
 
     // Get the value of textarea by id
     const prompt = document.getElementById('textArea').value;
-    if (!prompt || prompt == "") {
-      alert("Please enter Prompt");
+    var max_tokens = Number(document.getElementById('txtMaxTokens').value); 
+    if (!prompt || prompt == ""|| !max_tokens) {
+      alert("Please enter Prompt and Max Tokens value");
       return false;
     }
 
@@ -127,7 +128,7 @@ document.getElementById('btnAnalyze').onclick = () => {
     const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;
 
     // Submit the value using POST request and POST endpoint
-    axios.post(`/articles/analyze/${article.id}`, { text: prompt })
+    axios.post(`/articles/analyze/${article.id}`, { text: prompt, max_tokens: max_tokens })
     .then(async response => {
       
         const jsonResponse = JSON.stringify(response.data, null, 2);

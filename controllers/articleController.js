@@ -27,14 +27,18 @@ exports.getArticlesBySourceId = function(req, res) {
 
 exports.analyzeArticleById = async function(req, res) {
     const articleId = req.params.id;
+    const max_tokens = req.body.max_tokens;
     const prompt = req.body.text;
+    // res.json({ message: `Start analyzing with ChatGPT 3.5 the contents of the article with id ${articleId}. Please wait...` });
+    // return;
+
     // console.log(articleId);
     // console.log(prompt);   
     try {
         const article = await Article.findById(articleId);
         // console.log(article);
         const text = prompt.replace(/{article}/g, article.contentData);
-        const response = await getCompletion(text);
+        const response = await getCompletion(text, max_tokens);
         // console.log(response.data.choices[0].text.trim());
         res.json( response.data );
     //    res.json({ message: `Start analyzing with ChatGPT 3.5 the contents of the article with id ${articleId}. Please wait...` });
