@@ -23,7 +23,7 @@ exports.getAllNewsSources = function(req, res) {
 exports.getNewsSourceByIndex = function(req, res) {
 
     const index = req.params.index;
-    res.json({/* data: newsManager.sources[index] */});
+    res.json({});
 };
 
 /*

@@ -6,9 +6,7 @@ const { RssNewsSourceProcessor } = require('./rssnewssource-processor.js');
 const { NewsSource } = require('../models/newsSource.js');
 
 // NewsManager class that holds all temporary data on news getting, parsing and summarization.
-// const newsManager = new NewsManager();
-const newsManager = new class{
-// class NewsManager {
+const newsReader = new class{
     constructor() {
         this._reset();
         this._loadSources();
@@ -234,4 +232,4 @@ const newsManager = new class{
     }
 }
 
-module.exports = newsManager;
+module.exports = newsReader;
