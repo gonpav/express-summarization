@@ -18,10 +18,12 @@ mongoose.connection.once('open', function() { console.log("Connected to MongoDB 
 // Import routes and data
 const newsManager = require('./services/newsmanager.js');
 const newsSourceRoutes = require('./routes/newsSourceRoutes');
+const articleRoutes = require('./routes/articleRoutes.js');
 
 newsManager.initializeDB(mongoose.connection);
 
-app.use('/api/news-sources', newsSourceRoutes);
+app.use('/newssources', newsSourceRoutes);
+app.use('/articles', articleRoutes);
 
 app.use('/news', async (req, res) => {
     res.json({hasData:  (newsManager.sources && newsManager.sources.length > 0)});

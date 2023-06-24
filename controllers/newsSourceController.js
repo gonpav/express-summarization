@@ -1,17 +1,29 @@
 // controllers/newsSourceController.js
 
-// const NewsSource = require('../models/NewsSource');
 require('dotenv').config();
-const newsManager = require('../services/newsmanager.js');
+const { URL } = require('url');
+const { NewsSource } = require('../models/newsSource.js');
 
 exports.getAllNewsSources = function(req, res) {
-    res.json({data: newsManager.sources});
-};
 
+    NewsSource
+    .find()
+    .sort({lastQueryDate: -1})
+    .then(items => {
+        const sources = items.map((x) => {
+            return {
+                url:  x.url, 
+                name: new URL(x.url).hostname, 
+                id: x._id
+            };
+        }); 
+        res.json(sources);
+    }); 
+};
 exports.getNewsSourceByIndex = function(req, res) {
 
     const index = req.params.index;
-    res.json({data: newsManager.sources[index]});
+    res.json({/* data: newsManager.sources[index] */});
 };
 
 /*
