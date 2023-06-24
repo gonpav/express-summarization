@@ -11,6 +11,7 @@ ArticleSchema = new mongoose.Schema({
   contentData: String, 
   retryCount: { type: Number, default: 0 }, // number of retries done to get the content
   lastError: String,                        // Error message recieved during fetching contentData
+  lastAnalysisDate: Date,                   // last time the contents of the article were analyzed with LLM
 
   // Reference to NewsSource
   sourceId: {

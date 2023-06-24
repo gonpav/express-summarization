@@ -24,6 +24,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });    
 });
 
+function getArticleTitleForList(article){
+    return article.lastAnalysisDate ? "** " + article.title : article.title;
+}
+
 function resetArticlesList(selectValue){
 
     // Delete all options in element with id === dropdown2
@@ -35,7 +39,6 @@ function resetArticlesList(selectValue){
     // reset UI
     articles = null;
     updateArticleData(null);
-    updateArticleMetadata();   
 
     // add and select placeholder if required
     if (selectValue !== ""){
@@ -48,7 +51,7 @@ function resetArticlesList(selectValue){
                 for(let i = -1; i < articles.length; i++) {
                     // console.log(articles[i]);
                     const el = document.createElement("option");
-                    el.textContent = (i === -1) ? "Select article" : articles[i].title;
+                    el.textContent = (i === -1) ? "Select article" : getArticleTitleForList(articles[i]);
                     el.value = (i === -1) ? "" : articles[i].link;
                     el.selected = (i === -1) ? true : false;
                     select.appendChild(el);
@@ -79,12 +82,44 @@ function updateArticleData(selectValue){
             placement: 'right'
         });
     }
-    enableAnalyzeButton(article);
+    enableAnalyzeButton(article != null);
     // document.getElementById("textArea3").innerText = article ? `${article.contentData}` : null;
+    updateArticleMetadata(article);   
 }
 
-function updateArticleMetadata(){
-    console.log('reset Article MetaData area');
+function updateArticleMetadata(article){
+    if (article && article.lastAnalysisDate){
+        enableAnalyzeButton(false);
+        axios.get(`/articles/metadata/${article.id}`)
+        .then(async response => {
+            onReceiveArticleMetadata(response.data);
+
+            if (response.data && response.data.prompt) {
+                document.getElementById('textArea').value = response.data.prompt;
+            }  
+            // enable loadSourcesBtn button
+            enableAnalyzeButton(true);
+        })
+        .catch(error => {
+            console.log(error);
+            enableAnalyzeButton(true);
+        });  
+    }
+    else {
+        var jsonOutput = document.getElementById('jsonOutput').textContent = "";
+    }
+}
+
+function onReceiveArticleMetadata(responseData){
+    const jsonResponse = JSON.stringify(responseData.data, null, 2);
+
+    var jsonOutput = document.getElementById('jsonOutput');
+    jsonOutput.textContent = jsonResponse;
+   
+    if (responseData && responseData.data && responseData.data.choices){            
+        jsonOutput.textContent += "\n";
+        jsonOutput.textContent += responseData.data.choices[0].text.trim();
+    }
 }
 
 function dropDownOnChange(selectElement) {
@@ -124,24 +159,22 @@ document.getElementById('btnAnalyze').onclick = () => {
 
     enableAnalyzeButton(false);
 
-    var selectValue = document.getElementById('dropdown2').value;   
+    const articlesDropDown = document.getElementById('dropdown2');
+    const selectValue = articlesDropDown.value;   
     const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;
 
     // Submit the value using POST request and POST endpoint
     axios.post(`/articles/analyze/${article.id}`, { text: prompt, max_tokens: max_tokens })
     .then(async response => {
       
-        const jsonResponse = JSON.stringify(response.data, null, 2);
-        // document.getElementById('textArea2').innerText = jsonResponse;
+        onReceiveArticleMetadata(response.data);
 
-        var jsonOutput = document.getElementById('jsonOutput');
-        jsonOutput.textContent = jsonResponse;
-       
-        if (response && response.data && response.data.choices){            
-            jsonOutput.textContent += "\n";
-            jsonOutput.textContent += response.data.choices[0].text.trim();
-        }
-
+        if (response.data && response.data.article) {
+            const index = articles.findIndex(x => x.link === article.link);
+            articles[index] = response.data.article;
+            const selectedOption = articlesDropDown.options[articlesDropDown.selectedIndex];
+            selectedOption.text = getArticleTitleForList(response.data.article);
+        }        
         // enable loadSourcesBtn button
         enableAnalyzeButton(true);
     })
