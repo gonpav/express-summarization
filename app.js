@@ -1,4 +1,14 @@
 require('dotenv').config();
+
+
+let keep_alive;
+if (process.env.KEEP_ALIVE === 'true') {
+    // Require keep_alive.js to continue working in Replit env:
+    // https://docs.replit.com/tutorials/nodejs/build-basic-discord-bot-nodejs#keeping-our-bot-alive
+    keep_alive = require('./keep_alive.js');
+}
+
+
 const express = require('express');
 const path = require('path');
 
