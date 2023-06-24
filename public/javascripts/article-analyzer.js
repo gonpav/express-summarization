@@ -80,7 +80,6 @@ function updateArticleData(selectValue){
         });
     }
     enableAnalyzeButton(article);
-    // document.getElementById("textArea2").innerText = article ? `${article.contentData}` : null;
     // document.getElementById("textArea3").innerText = article ? `${article.contentData}` : null;
 }
 
@@ -131,7 +130,16 @@ document.getElementById('btnAnalyze').onclick = () => {
     axios.post(`/articles/analyze/${article.id}`, { text: prompt })
     .then(async response => {
       
-        document.getElementById('textArea2').innerText = response.data.message;
+        const jsonResponse = JSON.stringify(response.data, null, 2);
+        // document.getElementById('textArea2').innerText = jsonResponse;
+
+        var jsonOutput = document.getElementById('jsonOutput');
+        jsonOutput.textContent = jsonResponse;
+       
+        if (response && response.data && response.data.choices){            
+            jsonOutput.textContent += "\n";
+            jsonOutput.textContent += response.data.choices[0].text.trim();
+        }
 
         // enable loadSourcesBtn button
         enableAnalyzeButton(true);
