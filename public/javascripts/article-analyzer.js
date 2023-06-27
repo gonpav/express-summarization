@@ -84,19 +84,22 @@ function updateArticleData(selectValue){
     }
     enableAnalyzeButton(article != null);
     // document.getElementById("textArea3").innerText = article ? `${article.contentData}` : null;
-    updateArticleMetadata(article);   
+    fetchArticleMetadata(article);   //
 }
 
-function updateArticleMetadata(article){
-    if (article && article.lastAnalysisDate){
-        enableAnalyzeButton(false);
-        axios.get(`/articles/metadata/${article.id}`)
-        .then(async response => {
-            onReceiveArticleMetadata(response.data);
+function fetchArticleMetadata(article){
 
-            if (response.data && response.data.prompt) {
-                document.getElementById('textArea').value = response.data.prompt;
-            }  
+    if (article && article.lastAnalysisDate){
+        const articleId = article.id;
+        enableAnalyzeButton(false);
+        axios.get(`/articles/metadata/${articleId}`)
+        .then(async response => {
+            updateArticleMetadata(articleId, response.data, true);
+
+            // if (response.data && response.data.prompt) {
+            //     document.getElementById('textArea').value = response.data.prompt;
+            // }  
+
             // enable loadSourcesBtn button
             enableAnalyzeButton(true);
         })
@@ -107,10 +110,80 @@ function updateArticleMetadata(article){
     }
     else {
         var jsonOutput = document.getElementById('jsonOutput').textContent = "";
+        updateArticleMetadataVersions(null,null);
     }
 }
 
-function onReceiveArticleMetadata(responseData){
+function updateArticleMetadata(articleId, responseData, updatePrompt){
+    var jsonOutput = document.getElementById('jsonOutput');
+    // If error happened then show it and exit
+    if (responseData.error) {
+        jsonOutput.textContent = responseData.error; // JSON.stringify(responseData.error, null, 2);
+        return;        
+    }
+    const metadata = responseData.data;
+
+    // Save metadata information locally
+    const index = articles.findIndex(x => x.id === articleId);
+    articles[index].metadata = metadata;
+
+    // Get the latest metadata and show it in the prompt (if showPrompt) and jsonOutput area
+    let mostRecentMetadata = metadata.reduce((mostRecent, current) => {
+        return (mostRecent.queryDate > current.queryDate) ? mostRecent : current;
+    });
+
+    updateArticleMetadataVersions(articles[index], mostRecentMetadata.queryDate);
+    updateArticleMetadataResult(articles[index], mostRecentMetadata.queryDate)
+}
+
+function updateArticleMetadataVersions(article, selectedDate) {
+
+    const select = document.getElementById("dropdown3");
+    // Delete all options in element with id === dropdown2
+    while (select.options.length > 0) {
+        select.remove(0);
+    } 
+    if (!article || !article.metadata) {
+        return;
+    }
+    // Sort here ????
+    let selectedOption = null;
+    for(let i = 0; i < article.metadata.length; i++) {
+        const el = document.createElement("option");
+        const md = article.metadata[i]; 
+        el.textContent = md.queryDate;
+        el.value = md.queryDate;
+        select.appendChild(el);
+
+        if (selectedDate === md.queryDate) {
+            selectedOption = el;
+        }
+    }  
+    if (selectedOption) { 
+        selectedOption.selected = true;
+    }
+}
+
+function updateArticleMetadataResult (article, queryDate) {
+    let mostRecentMetadata = article.metadata.find(x => x.queryDate === queryDate);
+
+    const jsonResponse = JSON.stringify(mostRecentMetadata.result, null, 2);
+
+    // Update Json Output area
+    jsonOutput.textContent = jsonResponse;   
+    if (mostRecentMetadata.result.choices){            
+        jsonOutput.textContent += "\n";
+        jsonOutput.textContent += mostRecentMetadata.result.choices[0].text.trim();
+        //jsonOutput.textContent += JSON.stringify(mostRecentMetadata.result.choices[0].text.trim(), null, 2);
+    }
+
+    // Update Prompt area
+    if (mostRecentMetadata.prompt) {
+        document.getElementById('textArea').value = mostRecentMetadata.prompt;
+    }  
+}
+
+function onReceiveArticleMetadataPrev(responseData){
     const jsonResponse = JSON.stringify(responseData.data, null, 2);
 
     var jsonOutput = document.getElementById('jsonOutput');
@@ -126,12 +199,20 @@ function dropDownOnChange(selectElement) {
     
     if (selectElement.id === "dropdown1") { resetArticlesList( selectElement.value); }
     if (selectElement.id === "dropdown2") { updateArticleData( selectElement.value); }
-
-    // Select right styles for drop-down
-    if (selectElement.value === "") {
-        selectElement.classList.add("dropdown-placeholder");
-    } else {
-        selectElement.classList.remove("dropdown-placeholder");
+    
+    if (selectElement.id === "dropdown3") { 
+        const articlesDropDown = document.getElementById('dropdown2');
+        const selectValue = articlesDropDown.value;   
+        const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;    
+        updateArticleMetadataResult( article, selectElement.value); 
+    }
+    else {
+        // Select right styles for drop-down
+        if (selectElement.value === "") {
+            selectElement.classList.add("dropdown-placeholder");
+        } else {
+            selectElement.classList.remove("dropdown-placeholder");
+        }
     }
 }
 
@@ -162,19 +243,23 @@ document.getElementById('btnAnalyze').onclick = () => {
     const articlesDropDown = document.getElementById('dropdown2');
     const selectValue = articlesDropDown.value;   
     const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;
+    const articleId = article.id;
 
     // Submit the value using POST request and POST endpoint
-    axios.post(`/articles/analyze/${article.id}`, { text: prompt, max_tokens: max_tokens })
+    axios.post(`/articles/analyze/${articleId}`, { text: prompt, max_tokens: max_tokens })
     .then(async response => {
-      
-        onReceiveArticleMetadata(response.data);
 
+        // Update article with server information
         if (response.data && response.data.article) {
             const index = articles.findIndex(x => x.link === article.link);
             articles[index] = response.data.article;
             const selectedOption = articlesDropDown.options[articlesDropDown.selectedIndex];
             selectedOption.text = getArticleTitleForList(response.data.article);
         }        
+        
+        // Udpate article metadata
+        updateArticleMetadata(articleId, response.data, false);
+
         // enable loadSourcesBtn button
         enableAnalyzeButton(true);
     })
@@ -183,3 +268,4 @@ document.getElementById('btnAnalyze').onclick = () => {
         enableAnalyzeButton(true);
     });  
   };
+

@@ -50,14 +50,12 @@ exports.analyzeArticleById = async function(req, res) {
             { articleId: article._id }, 
             { $set: articleMetadata }, 
             { upsert: true, new: false }
-            );
-
-        // console.log(response.data.choices[0].text.trim());
-        res.json( { data: response.data, article: toArticleDTO (article) });
-    //    res.json({ message: `Start analyzing with ChatGPT 3.5 the contents of the article with id ${articleId}. Please wait...` });
+            ); 
+        //res.json( { data: response.data, article: toArticleDTO (article) });
+        res.json( { data: articleMetadata.metadata, article: toArticleDTO (article) });    
     }
     catch (err) {
-        res.json( { data: err.message } );
+        res.json( { error: err.message } );
     }
 };
 
@@ -68,10 +66,11 @@ exports.getArticleMetadataById = async function(req, res) {
         // Get ArticleMetadata object
         const articleMetadata = await ArticleMetadata.findOne({ articleId: articleId });
         if (articleMetadata) {             
-            let mostRecentMetadata = articleMetadata.metadata.reduce((mostRecent, current) => {
-                return (mostRecent.queryDate > current.queryDate) ? mostRecent : current;
-            });
-            res.json( { data: mostRecentMetadata.result, prompt: mostRecentMetadata.prompt });
+            // let mostRecentMetadata = articleMetadata.metadata.reduce((mostRecent, current) => {
+            //     return (mostRecent.queryDate > current.queryDate) ? mostRecent : current;
+            // });
+            res.json( { data: articleMetadata.metadata });
+            //res.json( { data: mostRecentMetadata.result, prompt: mostRecentMetadata.prompt });
         }
         else {
             res.json( { data: "" } );
@@ -80,7 +79,7 @@ exports.getArticleMetadataById = async function(req, res) {
     catch (err) {
         res.json( { data: err.message } );
     }
-};
+};  
 
 function addArticleMetadata(articleMetadata, response, prompt) {
     if (!articleMetadata.metadata) {
