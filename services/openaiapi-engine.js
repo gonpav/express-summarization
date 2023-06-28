@@ -23,9 +23,21 @@ async function getCompletion (prompt, max_tokens){
             // stop: ['You:'],
         })
         .then(response => {
+            if (response.data.choices[0].finish_reason !== "stop"){
+                // This is an error. 
+                let partialContent = response.data;
+                try {
+                    partialContent = JSON.stringify(response.data, null, 2)
+                } catch (e) {                    
+                }
+                const em = `The OpenAI completion API did not finish properly. Finish reason: "${response.data.choices[0].finish_reason}".\nPartially returned content:\n${partialContent}`;
+                //throw new Error(em);
+                const err = new Error(em);
+                reject(err);
+            }
             // const summary = response.data.choices[0].text.trim();
             // article.summary = summary;
-            // console.log(summary);
+            // console.log(summary);  
             resolve(response);    
         })
         .catch(error => {
