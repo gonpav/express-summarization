@@ -24,7 +24,10 @@
         <label id="label1" class="block w-2/3 mb-2"></label>
         <label id="label2" class="block w-2/3 mb-2"></label>
         <label id="label3" class="block w-2/3 mb-2"></label>
-        <label id="label4" class="block w-2/3 line-clamp-1 cursor-help"></label>
+        <div class="flex items-center">
+            <label id="label4" class="line-clamp-1 overflow-hidden w-2/3 cursor-help"></label>
+            <button id="copyContentBtn" class="ml-2 hidden" title="copy to clipboard"><img src="./images/copy-icon.svg" alt="Copy" class="h-3 w-3"></button>
+        </div>        
     </div>
     <!-- <div class="mt-4 grid grid-cols-3 gap-4">
         <div>
@@ -50,11 +53,12 @@
             <button id="btnAnalyze" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" disabled>Analyze</button>
         </div>
     </div>
-    
+
     <div class="mt-4 grid grid-cols-3 gap-4"> <!-- <div class="mt-4 grid grid-cols-2 gap-4"> -->   
-        <div class="col-span-2"> <!--  <div> -->
+        <div class="col-span-2 relative"> <!--  <div> -->
             <!-- <textarea id="textArea2" class="w-full p-2 border border-gray-300 rounded" rows="7"></textarea> -->
             <pre id="jsonOutput" class="p-4 bg-white text-gray-800 border border-gray-300 rounded-md overflow-x-auto"></pre>
+            <button id="copyMetadataBtn" class="absolute top-2.5 right-3 hidden" title="copy to clipboard"><img src="./images/copy-icon.svg" alt="Copy" class="h-3 w-3"></button>
         </div>
         <div>
             <select id="dropdown3" class="w-full p-2 border border-gray-300 rounded" onchange="dropDownOnChange(this)" ></select>        

@@ -76,15 +76,19 @@ function updateArticleData(selectValue){
     document.getElementById("label4").innerHTML = article ? `<b>Snippet</b>: ${article.contentData}` : null;
 
     if (article) {
+        document.getElementById("copyContentBtn").classList.remove('hidden');
         tippy(document.getElementById("label4"), {
             content: article.contentData ? article.contentData : article.contentSnippet,
             allowHTML: true,
             placement: 'right'
         });
     }
+    else {
+        document.getElementById("copyContentBtn").classList.add('hidden');        
+    }
+
     enableAnalyzeButton(article != null);
-    // document.getElementById("textArea3").innerText = article ? `${article.contentData}` : null;
-    fetchArticleMetadata(article);   //
+    fetchArticleMetadata(article);   
 }
 
 function fetchArticleMetadata(article){
@@ -170,29 +174,20 @@ function updateArticleMetadataResult (article, queryDate) {
     const jsonResponse = JSON.stringify(mostRecentMetadata.result, null, 2);
 
     // Update Json Output area
+    var jsonOutput = document.getElementById('jsonOutput');
     jsonOutput.textContent = jsonResponse;   
     if (mostRecentMetadata.result.choices){            
         jsonOutput.textContent += "\n";
         jsonOutput.textContent += mostRecentMetadata.result.choices[0].text.trim();
         //jsonOutput.textContent += JSON.stringify(mostRecentMetadata.result.choices[0].text.trim(), null, 2);
     }
+    
+    jsonOutput.textContent ? document.getElementById("copyMetadataBtn").classList.remove('hidden') : document.getElementById("copyMetadataBtn").classList.add('hidden');
 
     // Update Prompt area
     if (mostRecentMetadata.prompt) {
         document.getElementById('textArea').value = mostRecentMetadata.prompt;
     }  
-}
-
-function onReceiveArticleMetadataPrev(responseData){
-    const jsonResponse = JSON.stringify(responseData.data, null, 2);
-
-    var jsonOutput = document.getElementById('jsonOutput');
-    jsonOutput.textContent = jsonResponse;
-   
-    if (responseData && responseData.data && responseData.data.choices){            
-        jsonOutput.textContent += "\n";
-        jsonOutput.textContent += responseData.data.choices[0].text.trim();
-    }
 }
 
 function dropDownOnChange(selectElement) {
@@ -201,9 +196,10 @@ function dropDownOnChange(selectElement) {
     if (selectElement.id === "dropdown2") { updateArticleData( selectElement.value); }
     
     if (selectElement.id === "dropdown3") { 
-        const articlesDropDown = document.getElementById('dropdown2');
-        const selectValue = articlesDropDown.value;   
-        const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;    
+        // const articlesDropDown = document.getElementById('dropdown2');
+        // const selectValue = articlesDropDown.value;   
+        // const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;    
+        const article = getSelectedArticle();
         updateArticleMetadataResult( article, selectElement.value); 
     }
     else {
@@ -228,6 +224,14 @@ function enableAnalyzeButton(enable) {
     }
 }
 
+
+function getSelectedArticle () {
+    const articlesDropDown = document.getElementById('dropdown2');
+    const selectValue = articlesDropDown.value;   
+    const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;    
+    return article;
+}
+
 document.getElementById('btnAnalyze').onclick = () => {
 
     // Get the value of textarea by id
@@ -240,9 +244,10 @@ document.getElementById('btnAnalyze').onclick = () => {
 
     enableAnalyzeButton(false);
 
-    const articlesDropDown = document.getElementById('dropdown2');
-    const selectValue = articlesDropDown.value;   
-    const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;
+    // const articlesDropDown = document.getElementById('dropdown2');
+    // const selectValue = articlesDropDown.value;   
+    // const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;
+    const article = getSelectedArticle();
     const articleId = article.id;
 
     // Submit the value using POST request and POST endpoint
@@ -267,5 +272,17 @@ document.getElementById('btnAnalyze').onclick = () => {
         console.log(error);
         enableAnalyzeButton(true);
     });  
-  };
+};
 
+document.getElementById('copyContentBtn').onclick = () => {
+
+    const article = getSelectedArticle();
+    navigator.clipboard.writeText(article.contentData);
+};
+
+
+document.getElementById('copyMetadataBtn').onclick = () => {
+
+    var jsonOutput = document.getElementById('jsonOutput');
+    navigator.clipboard.writeText(jsonOutput.textContent);
+};
