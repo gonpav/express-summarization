@@ -1,9 +1,11 @@
 // controllers/ArticleController.js
 
 require('dotenv').config();
+
 const { Article } = require('../models/article.js');
 const { ArticleMetadata } = require('../models/articleMetadata.js');
-const { getCompletion } = require ('../services/openaiapi-engine.js')
+const { ArticleNlpProcessor } = require('../services/article-nlp-processor.js');
+
 
 exports.getArticlesBySourceId = function(req, res) {
     const sourceId = req.params.id;
@@ -21,78 +23,26 @@ exports.analyzeArticleById = async function(req, res) {
     const max_tokens = req.body.max_tokens;
     const prompt = req.body.text;
 
-    // console.log(articleId);
-    // console.log(prompt);   
     try {
-        let article = await Article.findById(articleId);
-        const prevAnalysisDate = article.lastAnalysisDate; 
-        const text = prompt.replace(/{article}/g, article.contentData);
-        
-        // Get OpenAI completion
-        const response = await getCompletion(text, max_tokens);
-
-        // Save Article result in the database and return
-        article = await Article.findOneAndUpdate( 
-            { _id: article._id, sourceId: article.sourceId }, 
-            { $set: { lastAnalysisDate: new Date() } }, 
-            { upsert: false, new: true }
-            );
-
-        // Get or Create new ArticleMetadata object
-        let articleMetadata = { articleId: article._id };
-        if (prevAnalysisDate) { 
-            articleMetadata = await ArticleMetadata.findOne({ articleId: article._id }); 
-        }
-        // Create new Metadata for article
-        articleMetadata = addArticleMetadata (articleMetadata, response.data, prompt);
-        // Save articleMetadata in the DB
-        await ArticleMetadata.findOneAndUpdate( 
-            { articleId: article._id }, 
-            { $set: articleMetadata }, 
-            { upsert: true, new: false }
-            ); 
-        //res.json( { data: response.data, article: toArticleDTO (article) });
-        res.json( { data: articleMetadata.metadata, article: toArticleDTO (article) });    
+        const result = await ArticleNlpProcessor.analyzeArticle(articleId, prompt, max_tokens);
+        res.json( { data: result.data, article: toArticleDTO (result.article) });    
     }
     catch (err) {
         res.json( { error: err.message } );
     }
 };
-
  
 exports.getArticleMetadataById = async function(req, res) {
     const articleId = req.params.id;
     try {
         // Get ArticleMetadata object
         const articleMetadata = await ArticleMetadata.findOne({ articleId: articleId });
-        if (articleMetadata) {             
-            // let mostRecentMetadata = articleMetadata.metadata.reduce((mostRecent, current) => {
-            //     return (mostRecent.queryDate > current.queryDate) ? mostRecent : current;
-            // });
-            res.json( { data: articleMetadata.metadata });
-            //res.json( { data: mostRecentMetadata.result, prompt: mostRecentMetadata.prompt });
-        }
-        else {
-            res.json( { data: "" } );
-        }
+        articleMetadata ? res.json({ data: articleMetadata.metadata }) : res.json({ data: "" });
     }
     catch (err) {
         res.json( { data: err.message } );
     }
 };  
-
-function addArticleMetadata(articleMetadata, response, prompt) {
-    if (!articleMetadata.metadata) {
-        articleMetadata.metadata = [];
-    }
-    const metadata = {
-        prompt: prompt,
-        queryDate: new Date(),
-        result: response        
-    };
-    articleMetadata.metadata.push(metadata);
-    return articleMetadata;
-}
 
 function toArticleDTO(x) {
     return {
@@ -107,28 +57,3 @@ function toArticleDTO(x) {
     };
 }
 
-/*
-exports.analyzeArticleByIdAsync = function(req, res) {
-    const articleId = req.params.id;
-    const prompt = req.body.text;
-    console.log(articleId);
-    console.log(prompt);   
-    Article.findById(articleId)
-    .then(async (article) => {
-        console.log(article);
-        const text = prompt.replace(/{article}/g, article.contentData);
-        getCompletion(text)
-       .then(response => {
-            // const summary = response.data.choices[0].text.trim();
-            // article.summary = summary;
-            console.log(response.data.choices[0].text.trim());
-            res.json({ message: response });
-       })
-    }) 
-    .catch(err => {
-        res.status(500).send(err);
-    });
-    res.json({ message: `Start analyzing with ChatGPT 3.5 the contents of the article with id ${articleId}. Please wait...` });
-    return;
-};
-*/
