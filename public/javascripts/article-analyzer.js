@@ -24,10 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });    
 });
 
-function getArticleTitleForList(article){
-    return article.lastAnalysisDate ? "** " + article.title : article.title;
-}
-
 function resetArticlesList(selectValue){
 
     // Delete all options in element with id === dropdown2
@@ -98,11 +94,8 @@ function fetchArticleMetadata(article){
         enableAnalyzeButton(false);
         axios.get(`/articles/metadata/${articleId}`)
         .then(async response => {
-            updateArticleMetadata(articleId, response.data, true);
 
-            // if (response.data && response.data.prompt) {
-            //     document.getElementById('textArea').value = response.data.prompt;
-            // }  
+            updateArticleMetadata(articleId, response.data, true);
 
             // enable loadSourcesBtn button
             enableAnalyzeButton(true);
@@ -196,9 +189,6 @@ function dropDownOnChange(selectElement) {
     if (selectElement.id === "dropdown2") { updateArticleData( selectElement.value); }
     
     if (selectElement.id === "dropdown3") { 
-        // const articlesDropDown = document.getElementById('dropdown2');
-        // const selectValue = articlesDropDown.value;   
-        // const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;    
         const article = getSelectedArticle();
         updateArticleMetadataResult( article, selectElement.value); 
     }
@@ -224,12 +214,15 @@ function enableAnalyzeButton(enable) {
     }
 }
 
-
 function getSelectedArticle () {
     const articlesDropDown = document.getElementById('dropdown2');
     const selectValue = articlesDropDown.value;   
     const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;    
     return article;
+}
+
+function getArticleTitleForList(article){
+    return article.lastAnalysisDate ? "** " + article.title : article.title;
 }
 
 document.getElementById('btnAnalyze').onclick = () => {
@@ -244,26 +237,26 @@ document.getElementById('btnAnalyze').onclick = () => {
 
     enableAnalyzeButton(false);
 
-    // const articlesDropDown = document.getElementById('dropdown2');
-    // const selectValue = articlesDropDown.value;   
-    // const article = (articles && selectValue) ? articles.find(x => x.link === selectValue) : null;
     const article = getSelectedArticle();
-    const articleId = article.id;
 
     // Submit the value using POST request and POST endpoint
-    axios.post(`/articles/analyze/${articleId}`, { text: prompt, max_tokens: max_tokens })
+    axios.post(`/articles/analyze/${article.id}`, { text: prompt, max_tokens: max_tokens })
     .then(async response => {
 
-        // Update article with server information
+        
         if (response.data && response.data.article) {
+            // Update article with server information
             const index = articles.findIndex(x => x.link === article.link);
             articles[index] = response.data.article;
+            
+            // Update text in articlis DropDown to reflect changes
+            const articlesDropDown = document.getElementById('dropdown2');
             const selectedOption = articlesDropDown.options[articlesDropDown.selectedIndex];
             selectedOption.text = getArticleTitleForList(response.data.article);
         }        
         
         // Udpate article metadata
-        updateArticleMetadata(articleId, response.data, false);
+        updateArticleMetadata(article.id, response.data, false);
 
         // enable loadSourcesBtn button
         enableAnalyzeButton(true);
