@@ -170,7 +170,6 @@ function updateArticleMetadataResult (article, queryDate) {
     if (mostRecentMetadata.result.choices){            
         jsonOutput.textContent += "\n";
         jsonOutput.textContent += mostRecentMetadata.result.choices[0].text.trim();
-        //jsonOutput.textContent += JSON.stringify(mostRecentMetadata.result.choices[0].text.trim(), null, 2);
     }
     
     jsonOutput.textContent ? document.getElementById("copyMetadataBtn").classList.remove('hidden') : document.getElementById("copyMetadataBtn").classList.add('hidden');

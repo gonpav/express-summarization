@@ -73,7 +73,7 @@ class ArticleNlpProcessor {
     }
     
     static _validatePrompt(prompt) {
-        if (!(prompt.includes('"entities"') || prompt.includes(`'entities'`))) throw new Error ('Error: no "entities" field in the required JSON output of the prompt');
+        if (!prompt.includes('entities')) throw new Error ('Error: no "entities" field in the required JSON output of the prompt');
     }
 
     static _validateLLMResponseData(responseData) {
