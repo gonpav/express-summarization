@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 name: item.name,
                 value: item.value,
                 count: item.articleIds.length,
-                articles: item.articleIds.join(', ')
+                articles: item.articleIds
             }));
             updateTable();
         })
@@ -63,7 +63,11 @@ function updateTable() {
             <td class="border px-4 py-2">${item.value}</td>
             <td class="border px-4 py-2">${item.name}</td>
             <td class="border px-4 py-2">${item.count}</td>
-            <td class="border px-4 py-2">${item.articles}</td>
+            <td class="border px-4 py-2">
+                ${item.articles.map((articleId, index) => 
+                    `<a href="#" class="text-blue-600 hover:text-red-800 hover:underline" onclick="openArticle('${articleId}'); return false;">a${index+1}</a>`
+                ).join(', ')}
+            </td>
         `;
         tableBody.appendChild(row);
     }
@@ -71,4 +75,17 @@ function updateTable() {
     // Update total count
     const totalCount = document.getElementById('totalCount');
     totalCount.textContent = `Total count: ${apiData.length}`;    
+}
+
+function openArticle(articleId) {
+    axios.get(`/articles/${articleId}`)
+        .then(response => {
+            if (response.data && response.data.link) {
+                window.open(response.data.link, '_blank');
+            } else {
+                console.error('No URL returned from /article/ endpoint.');
+            }
+        }).catch(error => {
+            console.error('Error fetching article URL:', error);
+        });
 }

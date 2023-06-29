@@ -7,6 +7,15 @@ const { ArticleMetadata } = require('../models/articleMetadata.js');
 const { ArticleNlpProcessor } = require('../services/article-nlp-processor.js');
 
 
+exports.getArticleById = function(req, res) {
+    const articleId = req.params.id;
+    Article
+    .findOne({ _id: articleId })
+    .then(item => {
+        res.json(toArticleDTO(item) );
+    });        
+};
+
 exports.getArticlesBySourceId = function(req, res) {
     const sourceId = req.params.id;
     Article

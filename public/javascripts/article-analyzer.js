@@ -37,7 +37,7 @@ function resetArticlesList(selectValue){
 
     // add and select placeholder if required
     if (selectValue !== ""){
-        axios.get(`/articles/${selectValue}`)
+        axios.get(`/articles/newssource/${selectValue}`)
             .then(async response => {
                 if(response && response.data){
                     articles = response.data;
