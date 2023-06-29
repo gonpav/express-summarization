@@ -4,24 +4,23 @@ let articles = null;
 // On document load 
 document.addEventListener('DOMContentLoaded', function() {
     enableAnalyzeButton (false);
-    axios
-    .get('/newssources')
-    .then(async response => {
-        if(response && response.data){
-            newsSources = response.data;
-            const select = document.getElementById("dropdown1")
-            for(let i = 0; i < newsSources.length; i++) {
-                const el = document.createElement("option");
-                const ns = newsSources[i]; 
-                el.textContent = ns.name;
-                el.value = ns.id;
-                select.appendChild(el);
-            }  
-        }
-    })
-    .catch(error => {
-        console.log(error);
-    });    
+    axios.get('/newssources')
+        .then(async response => {
+            if(response && response.data){
+                newsSources = response.data;
+                const select = document.getElementById("dropdown1")
+                for(let i = 0; i < newsSources.length; i++) {
+                    const el = document.createElement("option");
+                    const ns = newsSources[i]; 
+                    el.textContent = ns.name;
+                    el.value = ns.id;
+                    select.appendChild(el);
+                }  
+            }
+        })
+        .catch(error => {
+            console.log(error);
+        });    
 });
 
 function resetArticlesList(selectValue){
@@ -38,25 +37,24 @@ function resetArticlesList(selectValue){
 
     // add and select placeholder if required
     if (selectValue !== ""){
-        axios
-        .get(`/articles/${selectValue}`)
-        .then(async response => {
-            if(response && response.data){
-                articles = response.data;
-                console.log(`Articles foudn: ${articles.length}`);
-                for(let i = -1; i < articles.length; i++) {
-                    // console.log(articles[i]);
-                    const el = document.createElement("option");
-                    el.textContent = (i === -1) ? "Select article" : getArticleTitleForList(articles[i]);
-                    el.value = (i === -1) ? "" : articles[i].link;
-                    el.selected = (i === -1) ? true : false;
-                    select.appendChild(el);
+        axios.get(`/articles/${selectValue}`)
+            .then(async response => {
+                if(response && response.data){
+                    articles = response.data;
+                    console.log(`Articles foudn: ${articles.length}`);
+                    for(let i = -1; i < articles.length; i++) {
+                        // console.log(articles[i]);
+                        const el = document.createElement("option");
+                        el.textContent = (i === -1) ? "Select article" : getArticleTitleForList(articles[i]);
+                        el.value = (i === -1) ? "" : articles[i].link;
+                        el.selected = (i === -1) ? true : false;
+                        select.appendChild(el);
+                    }
                 }
-            }
-        })
-        .catch(error => {
-            console.log(error);
-        });    
+            })
+            .catch(error => {
+                console.log(error);
+            });    
     }
     else {
         // stay with reset UI
@@ -93,17 +91,17 @@ function fetchArticleMetadata(article){
         const articleId = article.id;
         enableAnalyzeButton(false);
         axios.get(`/articles/metadata/${articleId}`)
-        .then(async response => {
+            .then(async response => {
 
-            updateArticleMetadata(articleId, response.data, true);
+                updateArticleMetadata(articleId, response.data, true);
 
-            // enable loadSourcesBtn button
-            enableAnalyzeButton(true);
-        })
-        .catch(error => {
-            console.log(error);
-            enableAnalyzeButton(true);
-        });  
+                // enable loadSourcesBtn button
+                enableAnalyzeButton(true);
+            })
+            .catch(error => {
+                console.log(error);
+                enableAnalyzeButton(true);
+            });  
     }
     else {
         var jsonOutput = document.getElementById('jsonOutput').textContent = "";
@@ -241,30 +239,30 @@ document.getElementById('btnAnalyze').onclick = () => {
 
     // Submit the value using POST request and POST endpoint
     axios.post(`/articles/analyze/${article.id}`, { text: prompt, max_tokens: max_tokens })
-    .then(async response => {
+        .then(async response => {
 
-        
-        if (response.data && response.data.article) {
-            // Update article with server information
-            const index = articles.findIndex(x => x.link === article.link);
-            articles[index] = response.data.article;
             
-            // Update text in articlis DropDown to reflect changes
-            const articlesDropDown = document.getElementById('dropdown2');
-            const selectedOption = articlesDropDown.options[articlesDropDown.selectedIndex];
-            selectedOption.text = getArticleTitleForList(response.data.article);
-        }        
-        
-        // Udpate article metadata
-        updateArticleMetadata(article.id, response.data, false);
+            if (response.data && response.data.article) {
+                // Update article with server information
+                const index = articles.findIndex(x => x.link === article.link);
+                articles[index] = response.data.article;
+                
+                // Update text in articlis DropDown to reflect changes
+                const articlesDropDown = document.getElementById('dropdown2');
+                const selectedOption = articlesDropDown.options[articlesDropDown.selectedIndex];
+                selectedOption.text = getArticleTitleForList(response.data.article);
+            }        
+            
+            // Udpate article metadata
+            updateArticleMetadata(article.id, response.data, false);
 
-        // enable loadSourcesBtn button
-        enableAnalyzeButton(true);
-    })
-    .catch(error => {
-        console.log(error);
-        enableAnalyzeButton(true);
-    });  
+            // enable loadSourcesBtn button
+            enableAnalyzeButton(true);
+        })
+        .catch(error => {
+            console.log(error);
+            enableAnalyzeButton(true);
+        });  
 };
 
 document.getElementById('btnNamedEntities').onclick = () => {
@@ -275,17 +273,17 @@ document.getElementById('btnNamedEntities').onclick = () => {
     const article = getSelectedArticle();
 
     // Submit the value using POST request and POST endpoint
-    axios.get(`/articles/entities/${article.id}`)
-    .then(async response => {
-       
+    axios.get(`/articles/namedentities/${article.id}`)
+        .then(async response => {
+        
 
-        // enable loadSourcesBtn button
-        enableAnalyzeButton(true);
-    })
-    .catch(error => {
-        console.log(error);
-        enableAnalyzeButton(true);
-    });  
+            // enable loadSourcesBtn button
+            enableAnalyzeButton(true);
+        })
+        .catch(error => {
+            console.log(error);
+            enableAnalyzeButton(true);
+        });  
 };
 
 document.getElementById('copyContentBtn').onclick = () => {

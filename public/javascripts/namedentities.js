@@ -1,0 +1,74 @@
+let apiData = [];
+let sortKeys = {
+    value: '',
+    name: '',
+    count: ''
+};
+
+// On document load 
+document.addEventListener('DOMContentLoaded', function() {
+
+    axios.get('/namedentities')
+        .then(response => {
+            apiData = response.data.map(item => ({
+                name: item.name,
+                value: item.value,
+                count: item.articleIds.length,
+                articles: item.articleIds.join(', ')
+            }));
+            updateTable();
+        })
+        .catch(error => {
+            console.log(error);
+        });    
+});
+
+function sortTable(key) {
+    // If clicked column was sorted before, toggle direction
+    if (sortKeys[key]) {
+        sortKeys[key] = sortKeys[key] === 'asc' ? 'desc' : 'asc';
+    } else {
+        // Otherwise, sort in ascending order
+        sortKeys[key] = 'asc';
+    }
+
+    apiData.sort((a, b) => {
+        let compareA = a[key];
+        let compareB = b[key];
+
+        // If sorting by 'name' or 'value', ignore case
+        if (key === 'name' || key === 'value') {
+            compareA = compareA.toLowerCase();
+            compareB = compareB.toLowerCase();
+        }
+
+        if (compareA > compareB) {
+            return sortKeys[key] === 'asc' ? 1 : -1;
+        } else if (compareA < compareB) {
+            return sortKeys[key] === 'asc' ? -1 : 1;
+        } else {
+            return 0;
+        }
+    });
+
+    updateTable();
+}
+
+function updateTable() {
+    const tableBody = document.getElementById('tableBody');
+    tableBody.innerHTML = '';
+    for (let item of apiData) {
+        let row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="border px-4 py-2">${item.value}</td>
+            <td class="border px-4 py-2">${item.name}</td>
+            <td class="border px-4 py-2">${item.count}</td>
+            <td class="border px-4 py-2">${item.articles}</td>
+        `;
+        tableBody.appendChild(row);
+    }
+
+    // Update total count
+    const totalCount = document.getElementById('totalCount');
+    totalCount.textContent = `Total count: ${apiData.length}`;    
+}

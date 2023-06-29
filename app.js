@@ -26,9 +26,11 @@ const db = require('./db.js');
 const newsSourceRoutes = require('./routes/newsSourceRoutes');
 const articleRoutes = require('./routes/articleRoutes.js');
 const newsReaderRoutes = require('./routes/newsReaderRoutes.js');
+const namedEntityRoutes = require('./routes/namedEntityRoutes.js');
 
 app.use('/newssources', newsSourceRoutes);
 app.use('/articles', articleRoutes);
+app.use('/namedentities',namedEntityRoutes);
 app.use('/newsreader', newsReaderRoutes);
 
 const port = process.env.PORT || 3000;
