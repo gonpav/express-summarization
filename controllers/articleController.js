@@ -24,6 +24,7 @@ exports.analyzeArticleById = async function(req, res) {
     const prompt = req.body.text;
 
     try {
+        // This is the right code to analyze the article.
         const result = await ArticleNlpProcessor.analyzeArticle(articleId, prompt, max_tokens);
         res.json( { data: result.data, article: toArticleDTO (result.article) });    
     }
@@ -32,6 +33,21 @@ exports.analyzeArticleById = async function(req, res) {
     }
 };
  
+exports.getArticleNamedEntities = async function(req, res) {
+    const articleId = req.params.id;
+    const max_tokens = req.body.max_tokens;
+    const prompt = req.body.text;
+
+    try {
+        // Temporary code to save all named entities of the latest metadata of the article
+        await ArticleNlpProcessor.saveArticleLatestNamedEntities(articleId);
+        res.json( { error: "All good" });    
+    }
+    catch (err) {
+        res.json( { error: err.message } );
+    }
+};
+
 exports.getArticleMetadataById = async function(req, res) {
     const articleId = req.params.id;
     try {

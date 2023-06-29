@@ -267,6 +267,27 @@ document.getElementById('btnAnalyze').onclick = () => {
     });  
 };
 
+document.getElementById('btnNamedEntities').onclick = () => {
+
+    // Get the value of textarea by id
+    enableAnalyzeButton(false);
+
+    const article = getSelectedArticle();
+
+    // Submit the value using POST request and POST endpoint
+    axios.get(`/articles/entities/${article.id}`)
+    .then(async response => {
+       
+
+        // enable loadSourcesBtn button
+        enableAnalyzeButton(true);
+    })
+    .catch(error => {
+        console.log(error);
+        enableAnalyzeButton(true);
+    });  
+};
+
 document.getElementById('copyContentBtn').onclick = () => {
 
     const article = getSelectedArticle();
