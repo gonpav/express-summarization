@@ -84,12 +84,23 @@ function toArticleDTO(x) {
 }
 
 function toMetadataDTO(x) {
+    let data = "";
+    if (x.result && x.result.choices) {
+        // Now we should check if this is an output from "createCompletion" or "createChatCompletion"
+        if (x.result.choices[0].text) {
+            data = x.result.choices[0].text;
+        }
+        else if (x.result.choices[0].message) {
+            data = x.result.choices[0].message.content;
+        }
+    }
+
     return {
         id: x._id,
         prompt: x.prompt,
         queryDate: x.queryDate,
         response: x.result,
-        data: (x.result && x.result.choices) ? x.result.choices[0].text : ""
+        data: data
     };
 }
 

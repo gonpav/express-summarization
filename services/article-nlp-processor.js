@@ -15,11 +15,20 @@ class ArticleNlpProcessor {
         return new Promise(async (resolve, reject) => {
             try {
                 let article = await Article.findById(articleId);
-                const text = prompt.replace(/{article}/g, article.contentData);
+                let response = null;
                 
-                // Get OpenAI completion
-                const response = await getCompletion(text, max_tokens, temperature);
-        
+                if (false) {
+                    const text = prompt.replace(/{article}/g, article.contentData);
+                    response = await getCompletion(text, max_tokens, temperature);
+                } 
+                else {
+                    const messages = [
+                        { role: "system", content: prompt },
+                        { role: "user", content: article.contentData }
+                    ];
+                    response = await getChatCompletion(messages, max_tokens, temperature);
+                }
+
                 // Check that output is correct JSON object
                 ArticleNlpProcessor._validateLLMResponseData(response.data);
 
@@ -79,7 +88,12 @@ class ArticleNlpProcessor {
     static _validateLLMResponseData(responseData) {
         let jsonObj = null; 
         try {
-            jsonObj = JSON.parse(responseData.choices[0].text);            
+            if (responseData.choices[0].text){
+                jsonObj = JSON.parse(responseData.choices[0].text);            
+            }
+            else if (responseData.choices[0].message) {
+                jsonObj = JSON.parse(responseData.choices[0].message.content);            
+            }
         } catch (error) {
             let partialContent = responseData;
             try {
