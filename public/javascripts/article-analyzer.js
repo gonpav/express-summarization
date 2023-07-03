@@ -162,14 +162,14 @@ function updateArticleMetadataVersions(article, selectedDate) {
 function updateArticleMetadataResult (article, queryDate) {
     let mostRecentMetadata = article.metadata.find(x => x.queryDate === queryDate);
 
-    const jsonResponse = JSON.stringify(mostRecentMetadata.result, null, 2);
+    const jsonResponse = JSON.stringify(mostRecentMetadata.response, null, 2);
 
     // Update Json Output area
     var jsonOutput = document.getElementById('jsonOutput');
     jsonOutput.textContent = jsonResponse;   
-    if (mostRecentMetadata.result.choices){            
+    if (mostRecentMetadata.data){            
         jsonOutput.textContent += "\n";
-        jsonOutput.textContent += mostRecentMetadata.result.choices[0].text.trim();
+        jsonOutput.textContent += mostRecentMetadata.data.trim();
     }
     
     jsonOutput.textContent ? document.getElementById("copyMetadataBtn").classList.remove('hidden') : document.getElementById("copyMetadataBtn").classList.add('hidden');

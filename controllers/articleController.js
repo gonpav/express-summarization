@@ -35,7 +35,7 @@ exports.analyzeArticleById = async function(req, res) {
     try {
         // This is the right code to analyze the article.
         const result = await ArticleNlpProcessor.analyzeArticle(articleId, prompt, max_tokens);
-        res.json( { data: result.data, article: toArticleDTO (result.article) });    
+        res.json( { data: result.data.map(metadata => toMetadataDTO(metadata)), article: toArticleDTO (result.article) });    
     }
     catch (err) {
         res.json( { error: err.message } );
@@ -62,7 +62,7 @@ exports.getArticleMetadataById = async function(req, res) {
     try {
         // Get ArticleMetadata object
         const articleMetadata = await ArticleMetadata.findOne({ articleId: articleId });
-        articleMetadata ? res.json({ data: articleMetadata.metadata }) : res.json({ data: "" });
+        articleMetadata ? res.json({ data: articleMetadata.metadata.map(metadata => toMetadataDTO(metadata)) }) : res.json({ data: "" });
     }
     catch (err) {
         res.json( { data: err.message } );
@@ -79,6 +79,16 @@ function toArticleDTO(x) {
         contentData: x.contentData, 
         lastError: x.lastError,
         lastAnalysisDate: x.lastAnalysisDate
+    };
+}
+
+function toMetadataDTO(x) {
+    return {
+        id: x._id,
+        prompt: x.prompt,
+        queryDate: x.queryDate,
+        response: x.result,
+        data: (x.result && x.result.choices) ? x.result.choices[0].text : ""
     };
 }
 
