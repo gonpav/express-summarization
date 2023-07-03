@@ -9,7 +9,7 @@ class ArticleNlpProcessor {
     constructor(){
     } 
 
-    static async analyzeArticle (articleId, prompt, max_tokens) {
+    static async analyzeArticle (articleId, prompt, max_tokens, temperature) {
         
         ArticleNlpProcessor._validatePrompt(prompt);
         return new Promise(async (resolve, reject) => {
@@ -18,7 +18,7 @@ class ArticleNlpProcessor {
                 const text = prompt.replace(/{article}/g, article.contentData);
                 
                 // Get OpenAI completion
-                const response = await getCompletion(text, max_tokens);
+                const response = await getCompletion(text, max_tokens, temperature);
         
                 // Check that output is correct JSON object
                 ArticleNlpProcessor._validateLLMResponseData(response.data);

@@ -2,7 +2,7 @@
 require('dotenv').config();
 const { Configuration, OpenAIApi } = require('openai');
 
-async function getCompletion (prompt, max_tokens){
+async function getCompletion (prompt, max_tokens, temperature){
     return new Promise((resolve, reject) => {
         // Make a short summary of the text using GPT-3.
         // text = "This code creates an Express app with a /news endpoint that accepts a url query parameter. When a request is made to this endpoint, it uses axios to make an HTTP GET request to the specified URL. ";
@@ -15,7 +15,7 @@ async function getCompletion (prompt, max_tokens){
         const summariesPromises = openai.createCompletion({
             model: modelEngine,
             prompt: prompt,
-            temperature: 0.5,
+            temperature: temperature,
             max_tokens: max_tokens,
             // top_p: 1.0,
             // frequency_penalty: 0.5,
@@ -41,7 +41,7 @@ async function getCompletion (prompt, max_tokens){
     });
 }
 
-async function getChatCompletion (prompt, max_tokens){
+async function getChatCompletion (prompt, max_tokens, temperature){
     throw new Error("Not implemented correctly!!!!");
     return new Promise((resolve, reject) => {
         // Make a short summary of the text using GPT-3.

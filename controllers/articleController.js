@@ -30,11 +30,12 @@ exports.getArticlesBySourceId = function(req, res) {
 exports.analyzeArticleById = async function(req, res) {
     const articleId = req.params.id;
     const max_tokens = req.body.max_tokens;
+    const temperature = req.body.temperature;
     const prompt = req.body.text;
 
     try {
         // This is the right code to analyze the article.
-        const result = await ArticleNlpProcessor.analyzeArticle(articleId, prompt, max_tokens);
+        const result = await ArticleNlpProcessor.analyzeArticle(articleId, prompt, max_tokens, temperature);
         res.json( { data: result.data.map(metadata => toMetadataDTO(metadata)), article: toArticleDTO (result.article) });    
     }
     catch (err) {
